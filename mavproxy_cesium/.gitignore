@@ -1,0 +1,3 @@
+*.pyc
+/app/api_keys.txt
+*.~
