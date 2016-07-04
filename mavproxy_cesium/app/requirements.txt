@@ -1,0 +1,3 @@
+Flask-SocketIO
+eventlet
+autobahn[twisted]

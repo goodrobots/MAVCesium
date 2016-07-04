@@ -1,0 +1,28 @@
+<ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
+	{% if markers %}
+        {% for id in markers %}
+            <li><a tabindex="-1" href="#" id = {{ id }}>Set</a></li>
+            <li><a tabindex="-1" href="#" id = {{ id }}>Remove</a></li>
+            <li><a tabindex="-1" href="#" id = {{ id }}>Move</a></li>
+        {% endfor %}
+        <li class="divider"></li>
+    {% endif %}
+	<li class="dropdown-submenu">
+        <a tabindex="-1" href="#">Mission</a>
+        <ul class="dropdown-menu">
+	        <li><a id ="mission-clear" href="#">Clear</a></li>
+	        <li><a id ="mission-list" href="#">List</a></li>
+	        <li><a id ="mission-load" href="#">Load</a></li>
+        </ul>
+    </li>
+    <li class="dropdown-submenu">
+        <a tabindex="-1" href="#">Fence</a>
+        <ul class="dropdown-menu">
+            <li><a id ="fence-clear" href="#">Clear</a></li>
+            <li><a id ="fence-list" href="#">List</a></li>
+            <li><a id ="fence-load" href="#">Load</a></li>
+        </ul>
+    </li>
+    <li class="divider"></li>
+    <li><a tabindex="-1" href="#">Show Landing Zone</a></li>
+</ul>
