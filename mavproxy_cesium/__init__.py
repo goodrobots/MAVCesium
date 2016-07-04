@@ -4,7 +4,7 @@ Samuel Dudley
 Jan 2016
 '''
 
-import subprocess, os, json, time, sys
+import subprocess, os, json, time, sys, uuid
 
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import mp_settings
@@ -23,8 +23,8 @@ class ServerProtocol(WebSocketServerProtocol):
 
     def onOpen(self):
         print("WebSocket connection open")
-        self.factory.data = []
-        self.factory.data.append(self)
+        self.id = uuid.uuid4()
+        self.factory.data[self.id]=self
 
     def onMessage(self, payload, isBinary):
         if isBinary:
@@ -37,6 +37,7 @@ class ServerProtocol(WebSocketServerProtocol):
 
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed: {0}".format(reason))
+        del self.factory.data[self.id]
 
         
 class CesiumModule(mp_module.MPModule):
@@ -67,10 +68,10 @@ class CesiumModule(mp_module.MPModule):
         
     def run_socket_server(self):
 #             log.startLogging(sys.stdout)
-        self.factory = WebSocketServerFactory(u"ws://127.0.0.1:9000")
+        self.factory = WebSocketServerFactory(u"ws://0.0.0.0:9000")
         self.factory.protocol = ServerProtocol
-        self.factory.setProtocolOptions(maxConnections=2)
-        self.factory.data = []
+        self.factory.setProtocolOptions(maxConnections=100)
+        self.factory.data = {}
         self.factory.message_queue = Queue.Queue()
         
         reactor.listenTCP(9000, self.factory)
@@ -94,7 +95,8 @@ class CesiumModule(mp_module.MPModule):
     def send_data(self, data):
         '''push json data to the browser'''
         payload = json.dumps(data).encode('utf8')
-        reactor.callFromThread(WebSocketServerProtocol.sendMessage, self.factory.data[0],  payload)
+        for connection in self.factory.data.values():
+            reactor.callFromThread(WebSocketServerProtocol.sendMessage, connection,  payload)
 
     def cmd_cesium(self, args):
         '''cesium command parser'''
