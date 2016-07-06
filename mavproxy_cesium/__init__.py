@@ -25,6 +25,9 @@ class ServerProtocol(WebSocketServerProtocol):
         print("WebSocket connection open")
         self.id = uuid.uuid4()
         self.factory.data[self.id]=self
+        payload = {'new_connection':self.id}
+#         payload = json.loads(payload)
+        self.factory.message_queue.put(payload)
 
     def onMessage(self, payload, isBinary):
         if isBinary:
@@ -92,11 +95,15 @@ class CesiumModule(mp_module.MPModule):
                 self.web_server_process = subprocess.Popen(['python', server_path], stdout = server_fh, stderr = server_fh)
                 server_fh.close()
         
-    def send_data(self, data):
+    def send_data(self, data, target = None):
         '''push json data to the browser'''
         payload = json.dumps(data).encode('utf8')
-        for connection in self.factory.data.values():
+        if target is not None:
+            connection = self.factory.data[target]
             reactor.callFromThread(WebSocketServerProtocol.sendMessage, connection,  payload)
+        else:   
+            for connection in self.factory.data.values():
+                reactor.callFromThread(WebSocketServerProtocol.sendMessage, connection,  payload)
 
     def cmd_cesium(self, args):
         '''cesium command parser'''
@@ -106,11 +113,32 @@ class CesiumModule(mp_module.MPModule):
             return
         if args[0] == "set":
             self.cesium_settings.command(args[1:])
-
+        elif args[0] == "count":
+            print('%u connected' % int(len(self.factory.data)))
         elif args[0] == "restart":
             self.restart()
         else:
             print(usage)
+            
+    def send_defines(self, target = None):
+        '''get the current mav defines and send them'''
+        miss_cmds = {}
+        frame_enum = {0: "Abs", 3: "Rel", 10: "AGL"}
+        
+        # auto-generate the list of mission commands
+        for cmd in mavutil.mavlink.enums['MAV_CMD']:
+            enum = mavutil.mavlink.enums['MAV_CMD'][cmd]
+            name = enum.name
+            name = name.replace('MAV_CMD_','')
+            if name == 'ENUM_END':
+                continue
+            miss_cmds[cmd] = name
+        
+        self.defines = {}
+        self.defines['frame_enum'] = frame_enum
+        self.defines['mission_commands'] = miss_cmds
+        self.send_data({"defines":self.defines}, target = target)
+
 
     def send_fence(self):
         '''load and draw the fence in cesium'''
@@ -118,8 +146,10 @@ class CesiumModule(mp_module.MPModule):
         self.fence_points_to_send = self.mpstate.public_modules['fence'].fenceloader.points
         for point in self.fence_points_to_send:
             point_dict = point.to_dict()
-            if point_dict['idx'] != 0: # dont include the return location
-                self.fence[point_dict['idx']] = {"lat":point_dict['lat'], "lon":point_dict['lng']}
+            iidx = point_dict['idx']
+            del point_dict['idx']
+            if idx != 0: # dont include the return location
+                self.fence[idx] = point_dict
         self.send_data({"fence_data":self.fence})
             
     def send_mission(self):
@@ -128,7 +158,9 @@ class CesiumModule(mp_module.MPModule):
         self.mission_points_to_send = self.mpstate.public_modules['wp'].wploader.wpoints
         for point in self.mission_points_to_send:
             point_dict = point.to_dict()
-            self.mission[point_dict['seq']] = {"x":point_dict['x'], "y":point_dict['y'], "z":point_dict['z']}
+            seq = point_dict['seq']
+            del point_dict['seq']
+            self.mission[seq] = point_dict
         self.send_data({"mission_data":self.mission})
         
     def restart(self):
@@ -195,7 +227,12 @@ class CesiumModule(mp_module.MPModule):
             if self.cesium_settings.debug:
                 print payload
                 
-            if 'wp_set' in payload.keys():
+            if 'new_connection' in payload.keys():
+                self.send_defines(target=payload['new_connection'])
+                self.send_fence()
+                self.send_mission()
+            
+            elif 'wp_set' in payload.keys():
                 self.mpstate.functions.process_stdin('wp set %u' % int(payload['wp_set']))
             
             elif 'wp_move' in payload.keys():

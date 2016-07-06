@@ -29,16 +29,7 @@ $(function () {
         viewFrom : vehicle_offset
     });
     
-    
-//    var socket = io.connect(); //connect to the flask server on port 5000 in the namespace 'data'
-//    //var socketr = io.connect('http://localhost:5000/test'); //connect to the flask server on port 5000 in the namespace 'data'
-//    socket.on("log_time_control", function(data) {
-//        console.log(data)
-//        clock.shouldAnimate = false
-//        var time = Cesium.JulianDate.addSeconds(log_time.start, data.log_time, new Cesium.JulianDate());
-//        clock.currentTime = time
-//    	
-//    });
+    var defines = undefined
     
     var show_landing_zone = {value: false,
     						 outer: undefined,
@@ -62,6 +53,11 @@ $(function () {
     var aircraft ={lat:null, lon:null, alt_wgs84:null}
     var pos_target = {lat:null, lon:null, alt_wgs84:null, color:Cesium.Color.FUSCHIA, show:true}
     var fence = {points:[], show:true, color:Cesium.Color.GREEN.withAlpha(0.2), alt_agl:500}
+    var home_alt_wgs84 = undefined
+    
+    function update_defines(defines_data) {
+    	defines = defines_data
+    }
     
     function update_fence_data(fence_data) {
         console.log(fence_data)
@@ -74,13 +70,13 @@ $(function () {
         	if (fence_data.hasOwnProperty(point)) {
         	
         		var pointOfInterest = Cesium.Cartographic.fromDegrees(
-        				fence_data[point].lon, fence_data[point].lat, 5000, new Cesium.Cartographic()
+        				fence_data[point].lng, fence_data[point].lat, 5000, new Cesium.Cartographic()
         			);
 				  	// Sample the terrain (async)
 				  	Cesium.sampleTerrain(viewer.terrainProvider, 11, [ pointOfInterest ]).then(function(samples) {
 				  		terrain_sample_height = samples[0].height
 				  	});
-				  fence.points.push(fence_data[point].lon, fence_data[point].lat, fence.alt_agl+terrain_sample_height); //[ lon, lat, alt, lon, lat, alt, etc. ]
+				  	fence.points.push(fence_data[point].lng, fence_data[point].lat, fence.alt_agl+terrain_sample_height); //[ lon, lat, alt, lon, lat, alt, etc. ]
 				  
 				  draw_fence()
         	}
@@ -104,87 +100,28 @@ $(function () {
  
         var cssColor = '#00ff00';
         var points = [];
-        var terrain_sample_height = 136
         
         for (var point in mision_data){
             if (mision_data.hasOwnProperty(point)) {
+            	if (point == 0){
+            		// this is the home point
+            		console.log('home')
+            		if (mision_data[point].frame == 0){
+            			home_alt_wgs84 = mision_data[point].z
+            		} else {
+            			console.log('Error: Home point does not have ABS alt')
+            		}
+            		
+            	}
             	
-            	var pointOfInterest = Cesium.Cartographic.fromDegrees(
-            			mision_data[point].y, mision_data[point].x, 5000, new Cesium.Cartographic()
-        			);
-				  	// Sample the terrain (async)
-				  	Cesium.sampleTerrain(viewer.terrainProvider, 11, [ pointOfInterest ]).then(function(samples) {
-				  		terrain_sample_height = samples[0].height
-				 
-				  	
-				  		console.log(mision_data[point].x, mision_data[point].y, mision_data[point].z, terrain_sample_height)
-				  	});
-            	
-				  		create_wp(point, mision_data[point].x, mision_data[point].y, mision_data[point].z+terrain_sample_height)
+            	if (home_alt_wgs84){ //if we could not define the home alt then don't bother...
+            		create_wp(point, mision_data[point])
+	            	}
 				  	 
             }
         }
     };
 
-//        
-////         var mission_line = viewer.entities.add({
-////         	id : "mission_line",
-////         	polyline : {
-////         		colorsPerVertex : true,
-////                 positions : Cesium.Cartesian3.fromDegreesArrayHeights( points ),
-////                 width : 3,
-////                 material : Cesium.Color.fromCssColorString( cssColor ),
-////                 followSurface : true
-////              },
-////             show : show_mission.value
-//            
-//             
-////          })
-//
-//        var colors = [];
-//        var tail_length = 10
-//        
-//        
-//        
-//        for( var i=0; i < points.length; i++ ){
-//        	if (points.length < tail_length){
-//        		colors.push(Cesium.Color.WHITE);
-//        		console.log('white 1')
-//        	} else{
-//        		if ((points.length - i) < tail_length){
-//        			colors.push(Cesium.Color.WHITE)
-//        			console.log('white 2')
-//        		} else{
-//        			colors.push(Cesium.Color.RED)
-//        			console.log('red')
-//        		}
-//        	}
-//        	
-//        }
-//        console.log(colors)
-//        
-//         
-//        scene.primitives.add(new Cesium.Primitive({
-//            geometryInstances : new Cesium.GeometryInstance({
-//                geometry : new Cesium.PolylineGeometry({
-//                    positions : Cesium.Cartesian3.fromDegreesArrayHeights( points ),
-//                    width : 1.0,
-//                    vertexFormat : Cesium.PolylineColorAppearance.VERTEX_FORMAT,
-//                    colors : colors,
-//                    colorsPerVertex : true
-//                    })
-//            }),
-//            appearance : new Cesium.PolylineColorAppearance()
-//        }));
-//         //var mission_wall = viewer.entities.add( {
-//         //    id : "mission_wall",
-//         //    wall : {
-//         //        positions: Cesium.Cartesian3.fromDegreesArrayHeights( points ),
-//         //        material: Cesium.Color.fromCssColorString( cssColor )
-//         //     }
-//         //})
-//        });
-    
     var terrain_sample_height
 
     function update_aircraft_data(aircraft_data) {
@@ -272,7 +209,7 @@ $(function () {
 	                scene.screenSpaceCameraController.enableZoom = true;
 	                scene.screenSpaceCameraController.enableTilt = false;
 	                scene.screenSpaceCameraController.enableLook = false;
-	                // TODO: there is a bug here with the zoom logic while track_vehicle is disabled 
+	                
 	        		viewer.camera.setView({
                         position : Cesium.Cartesian3.fromDegrees(lon, lat, alt_wgs84+god.view_alt),
                         heading : 0.0,

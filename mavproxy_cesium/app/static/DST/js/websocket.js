@@ -39,6 +39,8 @@ function open_websocket() {
 				update_mission_data(response.mission_data)
 			} else if (response.fence_data) {
 				update_fence_data(response.fence_data)
+			} else if (response.defines) {
+			update_defines(response.defines)
 			} else {
 				// Do nothing...
 			}
