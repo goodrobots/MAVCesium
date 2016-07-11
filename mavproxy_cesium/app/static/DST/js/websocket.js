@@ -31,16 +31,14 @@ function open_websocket() {
 	socket.onmessage = function(e) {
 		if (typeof e.data == "string") {
 			response = JSON.parse(e.data)
-			if (response.aircraft_data) {
-				update_aircraft_data(response.aircraft_data)
-			} else if (response.pos_target_data) {
+			if (response.pos_target_data) {
 				update_pos_target_data(response.pos_target_data)
 			} else if (response.mission_data) {
 				update_mission_data(response.mission_data)
 			} else if (response.fence_data) {
 				update_fence_data(response.fence_data)
 			} else if (response.defines) {
-			update_defines(response.defines)
+				update_defines(response.defines)
 			} else if (response.mav_data) {
 				update_data_stream(response.mav_data)
 			} else if (response.flightmode) {

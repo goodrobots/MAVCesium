@@ -51,7 +51,7 @@ $(function () {
     var views = [god_view, fpv_view, free_view]
     var hud = {show:true}
 
-    var aircraft ={lat:null, lon:null, alt_wgs84:null}
+    var aircraft = {}
     var pos_target = {lat:null, lon:null, alt_wgs84:null, color:Cesium.Color.FUSCHIA, show:true}
     var fence = {points:[], show:true, color:Cesium.Color.GREEN.withAlpha(0.2), alt_agl:500}
     var home_alt_wgs84 = undefined
@@ -61,6 +61,9 @@ $(function () {
     function update_data_stream(mav_data){
     	if (mav_data.mavpackettype){
     		data_stream[mav_data.mavpackettype]=mav_data
+    		if (mav_data.mavpackettype == 'ATTITUDE' || mav_data.mavpackettype == 'GLOBAL_POSITION_INT') {
+    			update_aircraft_data()
+    		}
     	}
     }
     
@@ -137,21 +140,20 @@ $(function () {
 
     var terrain_sample_height
 
-    function update_aircraft_data(aircraft_data) {
-
+    function update_aircraft_data() {
+    	if (data_stream.ATTITUDE && data_stream.GLOBAL_POSITION_INT) {
             var entity = viewer.entities.getById('vehicle');
-            
-            var lon = aircraft_data.lon*Math.pow(10.0, -7)
-            var lat = aircraft_data.lat*Math.pow(10.0, -7)
-            var alt_wgs84 = aircraft_data.alt_wgs84*Math.pow(10.0, -3)
-            aircraft.lat=lat
-            aircraft.lon=lon
-            aircraft.alt_wgs84=alt_wgs84     	
-	        var position = Cesium.Cartesian3.fromDegrees(lon, lat, alt_wgs84);
+            aircraft.lat = data_stream.GLOBAL_POSITION_INT.lat*Math.pow(10.0, -7)
+            aircraft.lon = data_stream.GLOBAL_POSITION_INT.lon*Math.pow(10.0, -7)
+            aircraft.alt_wgs84 = data_stream.GLOBAL_POSITION_INT.alt*Math.pow(10.0, -3)
+            aircraft.roll = data_stream.ATTITUDE.roll
+            aircraft.pitch = data_stream.ATTITUDE.pitch
+            aircraft.yaw = data_stream.ATTITUDE.yaw
+            aircraft.position = Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84);
             
 	        entity.orientation = Cesium.Transforms.headingPitchRollQuaternion(
-	        		position, aircraft_data.yaw+Math.PI/2.0, -aircraft_data.pitch, -aircraft_data.roll);
-	        entity.position = position;
+	        		aircraft.position, aircraft.yaw+Math.PI/2.0, -aircraft.pitch, -aircraft.roll);
+	        entity.position = aircraft.position;
 	        
 	        draw_pos_target()
 	        
@@ -180,7 +182,7 @@ $(function () {
 	        	if (god_view.init_flag){ //if this is the first time the god_view has been called since pushing the button
 	                // 2 Set view with heading, pitch and roll
 	                viewer.camera.setView({
-	                    destination : Cesium.Cartesian3.fromDegrees(lon, lat, alt_wgs84+god.view_alt),
+	                	destination : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+god.view_alt),
 	                    orientation: {
 	                        heading : 0.0,
 	                        pitch : -Cesium.Math.PI_OVER_TWO,
@@ -205,8 +207,7 @@ $(function () {
 	        		
 	                
 	        		viewer.camera.setView({
-                        destination : Cesium.Cartesian3.fromDegrees(lon, lat, alt_wgs84+god_view.alt),
-                        //positionCartographic : new Cesium.Cartographic(lon, lat, alt_wgs84+100),
+	        			destination : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+god_view.alt),
                         heading : 0.0,
                         pitch : -Cesium.Math.PI_OVER_TWO,
                         roll : 0.0
@@ -224,7 +225,7 @@ $(function () {
 	                scene.screenSpaceCameraController.enableLook = false;
 	                
 	        		viewer.camera.setView({
-                        position : Cesium.Cartesian3.fromDegrees(lon, lat, alt_wgs84+god.view_alt),
+	        			position : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+god.view_alt),
                         heading : 0.0,
                         pitch : -Cesium.Math.PI_OVER_TWO,
                         roll : 0.0
@@ -243,15 +244,16 @@ $(function () {
                 scene.screenSpaceCameraController.enableTilt = false;
                 scene.screenSpaceCameraController.enableLook = false;
                 
-	        	viewer.camera.setView({
-	        	    destination : position,
+                viewer.camera.setView({
+	        	    destination : aircraft.position,
 	        	    orientation: {
-	        	        heading : aircraft_data.yaw,
-	        	        pitch : aircraft_data.pitch,
-	        	        roll : aircraft_data.roll
+	        	        heading : aircraft.yaw,
+	        	        pitch : aircraft.pitch,
+	        	        roll : aircraft.roll
 	        	    }
 	        	});
-	        }       
+	        }
+    	}
 	        
         
     };

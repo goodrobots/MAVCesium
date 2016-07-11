@@ -48,7 +48,7 @@ class CesiumModule(mp_module.MPModule):
         super(CesiumModule, self).__init__(mpstate, "cesium", "Cesium map module", public = True)
         self.add_command('cesium', self.cmd_cesium, [""])
         
-        self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD', 'WIND', 'SYS_STATUS', 'MISSION_CURRENT', 'STATUSTEXT', 'FENCE_STATUS']
+        self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD', 'ATTITUDE', 'GLOBAL_POSITION_INT', 'SYS_STATUS', 'MISSION_CURRENT', 'STATUSTEXT', 'FENCE_STATUS']
 
         
         self.wp_change_time = 0
@@ -58,7 +58,7 @@ class CesiumModule(mp_module.MPModule):
         
         self.cesium_settings = mp_settings.MPSettings(
             [ ('localserver', bool, True),
-              ('debug', bool, False)])
+              ('debug', bool, True)])
         
         self.aircraft = {'lat':None, 'lon':None, 'alt_wgs84':None,
                          'roll':None, 'pitch':None, 'yaw':None}
@@ -184,27 +184,6 @@ class CesiumModule(mp_module.MPModule):
         '''handle an incoming mavlink packet'''
         if self.master.flightmode != self.flightmode:
             self.send_flightmode()
-            
-        if m.get_type() == 'GLOBAL_POSITION_INT':
-             
-            msg_dict = m.to_dict()
-            self.aircraft['lat']= msg_dict['lat']
-            self.aircraft['lon'] = msg_dict['lon']
-            self.aircraft['alt_wgs84'] = msg_dict['alt']
-             
-            if None not in self.aircraft.values():
-                self.send_data({"aircraft_data":self.aircraft})
-               
-             
-        if m.get_type() == 'ATTITUDE':
- 
-            msg_dict = m.to_dict()
-            self.aircraft['roll']= msg_dict['roll']
-            self.aircraft['pitch'] = msg_dict['pitch']
-            self.aircraft['yaw'] = msg_dict['yaw']
-             
-            if None not in self.aircraft.values():
-                self.send_data({"aircraft_data":self.aircraft})
         
         if m.get_type() == 'POSITION_TARGET_GLOBAL_INT':
             msg_dict = m.to_dict()
