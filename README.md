@@ -9,20 +9,20 @@ As a ground control station operator I often find myself wishing [MAVProxy](http
 
 The project is designed to run on a local machine to maximise performance, however the [demo](http://www.MAVCesium.io/) is displaying the output of a [MAVProxy](https://github.com/Dronecode/MAVProxy) ground station connected to a simulated vehicle flying around [CMAC](https://www.google.com.au/maps/place/Canberra+Model+Aircraft+Club+Flying+Field/@-35.362771,149.1636837,945m/data=!3m1!1e3!4m5!3m4!1s0x6b164b893600af05:0xa5e0eae0c1fb648e!8m2!3d-35.3627754!4d149.1658777).
 
-
-![screen shot of webapp](https://github.com/SamuelDudley/cesium_deploy/blob/master/CMAC.png "screen shot of webapp")
-
+### Screenshots
+![screen shot1 of webapp](https://github.com/SamuelDudley/cesium_deploy/blob/master/CMAC_HUD.png "screen shot with HUD")
+![screen shot2 of webapp](https://github.com/SamuelDudley/cesium_deploy/blob/master/CMAC_SMALL_HUD.png "screen shot with small HUD")
+![screen shot3 of webapp](https://github.com/SamuelDudley/cesium_deploy/blob/master/NO_HUD.png "screen shot with no HUD")
 
 ### Development
-Currently in pre-alpha this module has been heavily re-worked to reduce dependencies and increase cross platform support. Although currently under development, this module provides a usable position and attitude display, geofence display and (very) limited mission display capabilities.
+Currently in pre-alpha this module has been heavily re-worked to reduce dependencies and increase cross platform support. Although currently under development, this module provides a usable position and attitude display, HUD, geofence display and limited mission display capabilities.
  
 On the TODO list...
-* Improved mission display and planning  capabilities
+* Improved mission display and planning capabilities
 * Real time visualisation of sensor footprints and data feeds (video and image)
 * Support for custom digital elevation maps
 * Support for custom ground imagery
 * Log playback from .tlog and .bin files
-* Heads up display
 * Support responsive layouts
 * etc...
 
@@ -35,15 +35,15 @@ When you load the MAVCesium module two servers are created by default: A [flask 
 * Install the python dependencies located in [requirements.txt](https://github.com/SamuelDudley/MAVCesium/blob/master/mavproxy_cesium/app/requirements.txt) via pip
 * Either add the mavproxy_cesium directory from this repo to your PYTHON_PATH or copy and paste the mavproxy_cesium directory and its contents into your MAVProxy modules folder
 * (Optional but recommended) Get a free bing maps api key from [here](https://www.bingmapsportal.com/) and insert the key in [api_keys.txt](https://github.com/SamuelDudley/MAVCesium/blob/master/app/api_keys.txt#L1)
-* Run [MAVProxy](https://github.com/Dronecode/MAVProxy) and load the MAVCesium module with the '''module load cesium''' command in the MAVProxy console
-* Point your webgl enabled browser to http://127.0.0.1:5000/ and you should see the air vehicle in the center of your screen
+* Run [MAVProxy](https://github.com/Dronecode/MAVProxy) and load the MAVCesium module with the `module load cesium` command in the MAVProxy console
+* Point your webgl enabled browser to http://127.0.0.1:5000/ and you should see the air vehicle in the center of your screen with a HUD overlay
 
 * For bonus points replace the [Griffon Aerospace MQM-170 Outlaw gltf model](https://github.com/SamuelDudley/MAVCesium/blob/master/mavproxy_cesium/app/static/DST/models/rat.gltf) with something that resembles your air vehicle! You can convert .dae models to .gltf using [this](https://cesiumjs.org/convertmodel.html) online tool
 
 ### Module usage
 The top bar of the MAVCesium display contains similar data to the MAVProxy map. Here you will find the cursor lat, lon, alt and information on left click positions.
 You can access the (currently limited) context menu via double right click, while camera controls and settings can be found in the upper right of the screen.
-
+HUD overlay visibility can be toggled by pressing `h` when the MAVCesium display is active and can be made smaller via a button in the settings menu.
 
 If you get it running or find it useful let me know :) Issues and pull requests welcome!
 
