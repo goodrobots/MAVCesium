@@ -41,6 +41,10 @@ function open_websocket() {
 				update_fence_data(response.fence_data)
 			} else if (response.defines) {
 			update_defines(response.defines)
+			} else if (response.mav_data) {
+				update_data_stream(response.mav_data)
+			} else if (response.flightmode) {
+				update_flightmode(response.flightmode)
 			} else {
 				// Do nothing...
 			}

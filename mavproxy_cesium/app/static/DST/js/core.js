@@ -49,11 +49,24 @@ $(function () {
     var free_view = {value: true}
     
     var views = [god_view, fpv_view, free_view]
+    var hud = {show:true}
 
     var aircraft ={lat:null, lon:null, alt_wgs84:null}
     var pos_target = {lat:null, lon:null, alt_wgs84:null, color:Cesium.Color.FUSCHIA, show:true}
     var fence = {points:[], show:true, color:Cesium.Color.GREEN.withAlpha(0.2), alt_agl:500}
     var home_alt_wgs84 = undefined
+    var data_stream = {}
+    var flightmode = null
+    
+    function update_data_stream(mav_data){
+    	if (mav_data.mavpackettype){
+    		data_stream[mav_data.mavpackettype]=mav_data
+    	}
+    }
+    
+    function update_flightmode(flightmode_data){
+    	flightmode = flightmode_data
+    }
     
     function update_defines(defines_data) {
     	defines = defines_data
@@ -626,3 +639,20 @@ $('#cesium_container').mouseup(function (evt) {
 	    }
 	  }
 	});
+
+document.onkeypress = function(evt) {
+    evt = evt || window.event;
+    var charCode = evt.which || evt.keyCode;
+    var charStr = String.fromCharCode(charCode);
+    if (charStr == "-") {
+    	console.log('zoom -')
+    	viewer.camera.zoomOut(500)
+    } else if (charStr == "+") {
+    	viewer.camera.zoomIn(500)
+    	console.log('zoom +')
+    } else if (charStr == "h") {
+    	hud.show = !hud.show
+    } else {
+    	//do nothing
+    }
+};

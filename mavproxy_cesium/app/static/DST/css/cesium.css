@@ -2,11 +2,15 @@
 html {
   position: relative;
   height: 100%;
+  width: 100%;
+  margin: 0px;
   min-height: 100%;
 }
 body {
   overflow: hidden;
   height: 100%;
+  width:100%;
+  margin: 0px;
 }
   
 #cesium_container {
@@ -19,7 +23,6 @@ body {
         overflow: hidden;
         font-family: sans-serif;
 }
-
 
 #contextMenu {
   position: absolute;
@@ -79,8 +82,6 @@ body > .container {
 }
 
 
-
-
 body .cesium-viewer .cesium-widget-credits {
   display: block;
   position: static;
@@ -95,4 +96,12 @@ body .cesium-viewer .cesium-widget-credits {
 
 .cesium-credit-image img {
     width: 50px;
+}
+
+#hud {
+    top:0px;
+    left:0px;
+    position: absolute;
+    display: block;
+    pointer-events:none;
 }

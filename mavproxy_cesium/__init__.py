@@ -26,7 +26,6 @@ class ServerProtocol(WebSocketServerProtocol):
         self.id = uuid.uuid4()
         self.factory.data[self.id]=self
         payload = {'new_connection':self.id}
-#         payload = json.loads(payload)
         self.factory.message_queue.put(payload)
 
     def onMessage(self, payload, isBinary):
@@ -49,9 +48,13 @@ class CesiumModule(mp_module.MPModule):
         super(CesiumModule, self).__init__(mpstate, "cesium", "Cesium map module", public = True)
         self.add_command('cesium', self.cmd_cesium, [""])
         
+        self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD', 'WIND', 'SYS_STATUS', 'MISSION_CURRENT', 'STATUSTEXT', 'FENCE_STATUS']
+
+        
         self.wp_change_time = 0
         self.fence_change_time = 0
         self.rally_change_time = 0
+        self.flightmode = None
         
         self.cesium_settings = mp_settings.MPSettings(
             [ ('localserver', bool, True),
@@ -163,6 +166,10 @@ class CesiumModule(mp_module.MPModule):
             self.mission[seq] = point_dict
         self.send_data({"mission_data":self.mission})
         
+    def send_flightmode(self):
+        self.send_data({"flightmode":self.master.flightmode})
+        self.flightmode = self.master.flightmode
+        
     def restart(self):
         '''restart the web server'''
         if self.socket_server_thread is not None:
@@ -175,6 +182,9 @@ class CesiumModule(mp_module.MPModule):
 
     def mavlink_packet(self, m):
         '''handle an incoming mavlink packet'''
+        if self.master.flightmode != self.flightmode:
+            self.send_flightmode()
+            
         if m.get_type() == 'GLOBAL_POSITION_INT':
              
             msg_dict = m.to_dict()
@@ -204,6 +214,11 @@ class CesiumModule(mp_module.MPModule):
              
             if None not in self.pos_target.values():
                 self.send_data({"pos_target_data":self.pos_target})
+        
+        if m.get_type() in self.data_stream:
+            msg_dict = m.to_dict()
+            msg_dict['timestamp'] = m._timestamp
+            self.send_data({'mav_data':msg_dict})
                    
                 
         # if the waypoints have changed, redisplay
@@ -231,6 +246,10 @@ class CesiumModule(mp_module.MPModule):
                 self.send_defines(target=payload['new_connection'])
                 self.send_fence()
                 self.send_mission()
+                self.send_flightmode()
+            
+            elif 'mode_set' in payload.keys():
+                self.mpstate.functions.process_stdin('%s' % (payload['mode_set']))
             
             elif 'wp_set' in payload.keys():
                 self.mpstate.functions.process_stdin('wp set %u' % int(payload['wp_set']))
