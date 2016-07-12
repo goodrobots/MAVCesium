@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="MAVCesium">
+    <meta name="author" content="Samuel Dudley">
+    <link rel='stylesheet' href="/static/DST/css/cesium.css">
+    <link rel="stylesheet" href="/static/DST/css/third_party/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/DST/css/third_party/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/DST/css/third_party/jquery-ui.min.css"/>
+    <link rel="stylesheet" href="/static/DST/css/third_party/lobipanel.css"/>
+    <link rel="icon" href="/static/DST/favicon-32x32.png" sizes="32x32" />
+
+    <title>MAVCesium</title>
+    
+    <script src="/static/Build/Cesium/Cesium.js"></script>
+    <script>
+        var bing_api_key = '{{ bing_api_key }}';
+    </script>
+    <style>
+      @import url(/static/Build/Cesium/Widgets/widgets.css);
+    </style>
+    
+  </head>
+
+  <body>
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+	    <div class="nav navbar-nav navbar-left">
+	        <p class = "navbar-text" id = 'cursor_location'></p>
+	        <p class = "navbar-text" id = 'cursor_click'></p>
+	    </div>
+        <div class="nav navbar-nav navbar-right">
+	        <ul class="nav navbar-nav">
+		        <li class="dropdown">
+		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Camera<span class="caret"></span></a>
+		          <ul class="dropdown-menu">
+		            <li onclick="toggle_free_view(this, free_view)" id="free"><a href="#">Free</a></li>
+		            <li onclick="toggle_god_view(this, god_view)" id="god"><a href="#">Top Down</a></li>
+		            <li onclick="toggle_fpv_view(this, fpv_view)" id="fpv"><a href="#">Synthetic</a></li>
+		          </ul>
+		        </li>
+		        <li class='active' onclick="toggle_track_vehicle(this, track_vehicle)" id="track_vehicle"><a href="#" data-toggle="tooltip" data-placement="bottom" title="Track Vehicle"><i class="fa fa-crosshairs fa-lg" aria-hidden="true"></i></a></li>
+	            <li data-toggle="modal" data-target=".bd-example-modal-lg"><a href="#" data-toggle="tooltip" data-placement="bottom" title="Settings"><i class="fa fa-cogs fa-lg" aria-hidden="true"></i></a></li>
+	         </ul>
+         </div>
+    </nav>
+
+    <!-- Begin page content -->
+
+    <div class="container" id="cesium_container"></div>
+    <div id="contextMenu" class="dropdown clearfix">
+        {% include "context_menu.html" %}
+    </div>
+    {% include "settings_menu.html" %}
+    
+    <canvas id="hud"></canvas>
+    
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/static/DST/js/third_party/jquery-2.2.4.min.js"></script>
+    <script src="/static/DST/js/third_party/bootstrap.min.js"></script>
+    <script src="/static/DST/js/third_party/jquery-ui.min.js"></script>
+    <script src="/static/DST/js/third_party/lobipanel.js"></script>
+	<script src="/static/DST/js/cesium_setup.js"></script>
+	<script src="/static/DST/js/core.js"></script>
+	<script src="/static/DST/js/websocket.js"></script>
+	<script src="/static/DST/js/wp.js"></script>
+	<script src="/static/DST/js/context_menu.js"></script>
+	<script src="/static/DST/js/settings.js"></script>
+	<script src="/static/DST/js/hud.js"></script>
+	</body>
+</html>

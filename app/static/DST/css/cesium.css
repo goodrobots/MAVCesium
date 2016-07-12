@@ -1,0 +1,107 @@
+
+html {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  margin: 0px;
+  min-height: 100%;
+}
+body {
+  overflow: hidden;
+  height: 100%;
+  width:100%;
+  margin: 0px;
+}
+  
+#cesium_container {
+        position: relitive;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        overflow: hidden;
+        font-family: sans-serif;
+}
+
+#contextMenu {
+  position: absolute;
+  display:none;
+}
+
+body > .container {
+  padding: 0px;
+}
+
+.nav {
+    padding-right: 10px;
+    padding-left: 0px;
+}
+
+
+.dropdown-submenu {
+    position:relative;
+}
+.dropdown-submenu>.dropdown-menu {
+    top:0;
+    left:100%;
+    margin-top:-6px;
+    margin-left:-1px;
+    -webkit-border-radius:0 6px 6px 6px;
+    -moz-border-radius:0 6px 6px 6px;
+    border-radius:0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+    display:block;
+}
+.dropdown-submenu>a:after {
+    display:block;
+    content:" ";
+    float:right;
+    width:0;
+    height:0;
+    border-color:transparent;
+    border-style:solid;
+    border-width:5px 0 5px 5px;
+    border-left-color:#cccccc;
+    margin-top:5px;
+    margin-right:-10px;
+}
+.dropdown-submenu:hover>a:after {
+    border-left-color:#ffffff;
+}
+.dropdown-submenu.pull-left {
+    float:none !important;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+    left:-100%;
+    margin-left:10px;
+    -webkit-border-radius:6px 0 6px 6px;
+    -moz-border-radius:6px 0 6px 6px;
+    border-radius:6px 0 6px 6px;
+}
+
+
+body .cesium-viewer .cesium-widget-credits {
+  display: block;
+  position: static;
+  bottom: auto;
+  left: auto;
+  padding-right: 0;
+  color: #ffffff;
+  font-size: 8px;
+  text-shadow: none;
+  line-height: 10px;
+}
+
+.cesium-credit-image img {
+    width: 50px;
+}
+
+#hud {
+    top:0px;
+    left:0px;
+    position: absolute;
+    display: block;
+    pointer-events:none;
+}
