@@ -1,54 +1,25 @@
 #!/usr/bin/env python
+'''
+Flask server for Cesium map module
+Samuel Dudley
+Jan 2016
+'''
 
-
-
-async_mode = 'eventlet'
-
-import eventlet
-eventlet.monkey_patch()
-
-
-import time, os, binascii, datetime, subprocess, sys
-from os import environ
-
-
-import json
-import glob
-from uuid import uuid4
+import os, sys, json, uuid
 
 from flask import (
     Flask,
-    session,
-    redirect,
     render_template,
     request,
-    url_for,
-    send_from_directory,
-    Response,
 )
-
-from flask_socketio import (
-    SocketIO,
-    emit,
-    join_room,
-    leave_room,
-    close_room,
-    rooms,
-    disconnect,
-)
-
-
 
 app = Flask(__name__)
-app.secret_key = str(uuid4())
+app.secret_key = str(uuid.uuid4())
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC = os.path.join(APP_ROOT, 'static')
 with open(os.path.join(APP_ROOT, 'api_keys.txt', )) as fid:    
     api_keys = json.load(fid)
-
-socketio = SocketIO(app, async_mode=async_mode)
-
 
 @app.route('/')
 def index():
@@ -63,14 +34,21 @@ def get_current_context():
     
 @app.route('/exit', methods=["GET"])
 def exit():
-    sys.exit()
-    return "setting exit flag"
+    shutdown_server()
+    return "web server shutting down..."
     
+def shutdown_server():
+    shutdown_func = request.environ.get('werkzeug.server.shutdown')
+    shutdown_func()
 
-def start_server():
-
-    socketio.run(app, host='0.0.0.0',port=5000)
+def start_server(debug = False):
     
+    if not debug:
+        import logging
+        log = logging.getLogger('werkzeug')
+        log.setLevel(logging.ERROR)
+    
+    app.run(host='0.0.0.0',port=5000)
     
 if __name__ == '__main__':
     start_server()

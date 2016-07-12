@@ -4,7 +4,7 @@ Samuel Dudley
 Jan 2016
 '''
 
-import subprocess, os, json, time, sys, uuid
+import os, json, time, sys, uuid, urllib2
 
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import mp_settings
@@ -57,8 +57,8 @@ class CesiumModule(mp_module.MPModule):
         self.flightmode = None
         
         self.cesium_settings = mp_settings.MPSettings(
-            [ ('localserver', bool, True),
-              ('debug', bool, True)])
+            [ ('localwebserver', bool, True),
+              ('debug', bool, False)])
         
         self.aircraft = {'lat':None, 'lon':None, 'alt_wgs84':None,
                          'roll':None, 'pitch':None, 'yaw':None}
@@ -66,14 +66,14 @@ class CesiumModule(mp_module.MPModule):
         self.fence = {}
         self.mission = {}
         
-        self.web_server_process = None
+        self.web_server_thread = None
         self.socket_server_thread = None
         
         self.run_web_server()
         self.run_socket_server()
         
     def run_socket_server(self):
-#             log.startLogging(sys.stdout)
+        # log.startLogging(sys.stdout)
         self.factory = WebSocketServerFactory(u"ws://0.0.0.0:9000")
         self.factory.protocol = ServerProtocol
         self.factory.setProtocolOptions(maxConnections=100)
@@ -85,18 +85,25 @@ class CesiumModule(mp_module.MPModule):
         self.socket_server_thread.daemon = True
         self.socket_server_thread.start()
         
+    def stop_socket_server(self):
+        if self.socket_server_thread is not None:
+            reactor.callFromThread(reactor.stop) # Kill the socket server talking to the browser
+            while self.socket_server_thread.isAlive():
+                time.sleep(0.01) #TODO: handle this better...
+        
     def run_web_server(self):
         '''optionally launch the webserver on the local machine'''
-        if self.cesium_settings.localserver:
-            path_name = os.path.dirname(__file__)
-            server_path = os.path.join(path_name,'app','cesium_io_server.py')
-             
-            if self.cesium_settings.debug:
-                self.web_server_process = subprocess.Popen(['python', server_path])
-            else:
-                server_fh = open(os.devnull,"w")
-                self.web_server_process = subprocess.Popen(['python', server_path], stdout = server_fh, stderr = server_fh)
-                server_fh.close()
+        if self.cesium_settings.localwebserver:
+            from app import cesium_web_server
+            self.web_server_thread = threading.Thread(target=cesium_web_server.start_server, kwargs={'debug':self.cesium_settings.debug})
+            self.web_server_thread.daemon = True
+            self.web_server_thread.start()
+    
+    def stop_web_server(self):
+        if self.web_server_thread is not None:
+            urllib2.urlopen('http://127.0.0.1:5000/exit') # Kill the web server
+            while self.web_server_thread.isAlive():
+                time.sleep(0.01) #TODO: handle this better...
         
     def send_data(self, data, target = None):
         '''push json data to the browser'''
@@ -172,13 +179,8 @@ class CesiumModule(mp_module.MPModule):
         
     def restart(self):
         '''restart the web server'''
-        if self.socket_server_thread is not None:
-            reactor.callFromThread(reactor.stop) # Kill the socket server talking to the browser
-        if self.web_server_process is not None:
-            self.web_server_process.kill() # Kill the web server hosting the Cesium display
-            
+        self.stop_web_server() 
         self.run_web_server()
-        self.run_socket_server()
 
     def mavlink_packet(self, m):
         '''handle an incoming mavlink packet'''
@@ -206,7 +208,7 @@ class CesiumModule(mp_module.MPModule):
             self.wp_change_time = last_wp_change
             self.send_mission()
 
-            #this may have affected the landing lines from the rally points:
+            # this may have affected the landing lines from the rally points:
             self.rally_change_time = time.time()
     
         # if the fence has changed, redisplay
@@ -255,11 +257,8 @@ class CesiumModule(mp_module.MPModule):
    
     def unload(self):
         '''unload module'''
-        if self.socket_server_thread is not None:
-            reactor.callFromThread(reactor.stop)
-            
-        if self.web_server_process is not None:
-            self.web_server_process.kill() # Kill the web server hosting the cesium display
+        self.stop_socket_server()
+        self.stop_web_server()
         
         
 def init(mpstate):
