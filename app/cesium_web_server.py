@@ -4,7 +4,7 @@ Flask server for Cesium map module
 Samuel Dudley
 Jan 2016
 '''
-
+                             
 import os, sys, json, uuid
 
 from flask import (
@@ -13,11 +13,19 @@ from flask import (
     request,
 )
 
-app = Flask(__name__)
+try: # try to use pkg_resources to allow for zipped python eggs
+    import pkg_resources
+    APP_ROOT = pkg_resources.resource_filename('MAVProxy.modules.mavproxy_cesium','app')
+    APP_STATIC = pkg_resources.resource_filename('MAVProxy.modules.mavproxy_cesium.app','static')
+    APP_TEMPLATES = pkg_resources.resource_filename('MAVProxy.modules.mavproxy_cesium.app','templates')
+except: # otherwise fall back to the standard file system
+    APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+    APP_STATIC = os.path.join(APP_ROOT, 'static')
+    APP_TEMPLATES = os.path.join(APP_ROOT, 'templates')
+
+app = Flask(__name__, root_path=APP_ROOT, template_folder=APP_TEMPLATES, static_folder=APP_STATIC)
 app.secret_key = str(uuid.uuid4())
 
-APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-APP_STATIC = os.path.join(APP_ROOT, 'static')
 with open(os.path.join(APP_ROOT, 'api_keys.txt', )) as fid:    
     api_keys = json.load(fid)
 
