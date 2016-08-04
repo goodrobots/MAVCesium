@@ -38,12 +38,20 @@ The display is updated only as new data is received via the telemetry stream, so
 
 * Install the python dependencies for MAVCesium located in [requirements.txt](https://github.com/SamuelDudley/MAVCesium/blob/master/requirements.txt) via pip
 
-* I have made a branch of MAVProxy available which uses MAVCesium as a git submodule. The branch is available [here](https://github.com/SamuelDudley/MAVProxy)
-To install using this branch:
+* MAVCesium is avalable as a git submodule of [MAVProxy](https://github.com/Dronecode/MAVProxy). If you already have an existing [MAVProxy](https://github.com/Dronecode/MAVProxy) repository setup, you can initialise the MAVCesium module by running the following in your MAVProxy base directory:
  ```
- git clone --recursive https://github.com/SamuelDudley/MAVProxy.git
+ git submodule init
+ git submodule update
+ ```
+
+ **Otherwise** if you would like to clone MAVProxy and get the MAVCesium module at the same time you can run the following command:
+ ```
+ git clone --recursive https://github.com/Dronecode/MAVProxy.git
+ ```
+ You can then install MAVProxy as per the [developer guide](https://dronecode.github.io/MAVProxy/html/development/mavdevenv.html):
+ ```
  cd MAVProxy
- (sudo) python setup.py build install
+ python setup.py build install --user
  ```
  
 * (**Optional**) Get a free bing maps api key from [here](https://www.bingmapsportal.com/) and insert the key in the empty quotation marks within [api_keys.txt](https://github.com/SamuelDudley/MAVCesium/blob/master/app/api_keys.txt#L1). As an example the updated contents would look like this: `{"bing":"YourApiKeyFromBingMapsPortalDotCom"}`
