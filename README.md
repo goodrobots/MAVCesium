@@ -56,7 +56,7 @@ The display is updated only as new data is received via the telemetry stream, so
  
 * (**Optional**) Get a free bing maps api key from [here](https://www.bingmapsportal.com/) and insert the key in the empty quotation marks within [api_keys.txt](https://github.com/SamuelDudley/MAVCesium/blob/master/app/api_keys.txt#L1). As an example the updated contents would look like this: `{"bing":"YourApiKeyFromBingMapsPortalDotCom"}`
 * Run [MAVProxy](https://github.com/Dronecode/MAVProxy) and load the MAVCesium module with the `module load cesium` command in the MAVProxy console
-* Point your webgl enabled browser to http://127.0.0.1:5000/ and you should see the air vehicle in the center of your screen with a HUD overlay
+* Point your webgl enabled browser to http://127.0.0.1:5000/ and once you start receiving valid mavlink messages from the vehicle connected to the MAVProxy ground station you will see the vehicle model in the center of your screen with a HUD overlay
 
 * If you have other computers / tablets / ipads on your network you can also open webgl capable browsers on them and point it to the network facing IP address of the computer that MAVProxy is running on.
 * For bonus points replace the [Griffon Aerospace MQM-170 Outlaw gltf model](https://github.com/SamuelDudley/MAVCesium/blob/master/mavproxy_cesium/app/static/DST/models/rat.gltf) with something that resembles your air vehicle! You can convert .dae models to .gltf using [this](https://cesiumjs.org/convertmodel.html) online tool
