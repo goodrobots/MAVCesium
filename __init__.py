@@ -48,7 +48,10 @@ class CesiumModule(mp_module.MPModule):
         super(CesiumModule, self).__init__(mpstate, "cesium", "Cesium map module", public = True)
         self.add_command('cesium', self.cmd_cesium, [""])
         
-        self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD', 'ATTITUDE', 'GLOBAL_POSITION_INT', 'SYS_STATUS', 'MISSION_CURRENT', 'STATUSTEXT', 'FENCE_STATUS']
+        self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD',
+                            'ATTITUDE', 'GLOBAL_POSITION_INT',
+                            'SYS_STATUS', 'MISSION_CURRENT',
+                            'STATUSTEXT', 'FENCE_STATUS', 'WIND']
 
         
         self.wp_change_time = 0
