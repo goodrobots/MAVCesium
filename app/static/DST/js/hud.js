@@ -32,13 +32,7 @@ function resize_hud() {
 }
 
 //airspeed_guage = new arc_guage('AS');
-//this.min_display = 24;
-//this.warning_low = 25;
-//this.nominal_low = 27;
-//this.nominal_high = 37;
-//this.warning_high = 39;
-//this.max_display = 40;
-//this.offset_y = 1;
+
 //voltage_guage = new arc_guage('BATT', 1.0/1000.0);
 //voltage_guage.min_display = 3.1*6
 //voltage_guage.warning_low = 3.3*6;
@@ -50,6 +44,12 @@ function resize_hud() {
 
 function draw_hud() {
 	canvas.clearRect(0, 0, canvas_width, canvas_height);
+	if (!data_stream.ATTITUDE && !data_stream.GLOBAL_POSITION_INT) {
+		// we dont have valid mavlink data yet
+		// inform the user what is going on...
+		text_overlay.draw('Waiting for valid MAVLink data...')
+	}
+	
 	if (hud.show){
 		// update hud elements here...
 		if (data_stream.ATTITUDE) {
@@ -66,6 +66,23 @@ function draw_hud() {
 //		}
 //		flight_vector.draw()
 	}
+}
+
+var text_overlay = {
+	color: "#FFF",
+
+	draw: function(msg) {
+		canvas.fillStyle = this.color;
+	    canvas.strokeStyle = this.color;
+	    canvas.save() // pre rotate & translate
+	    canvas.textAlign="center";
+	    canvas.textBaseline="middle";
+	    canvas.font="30px Arial";
+	    canvas.translate(canvas_width/2, canvas_height/2);
+	    canvas.fillText(msg, 0, 0);
+	    canvas.restore() // post rotate & translate
+	}
+		
 }
 
 var pitch_ladder = {
