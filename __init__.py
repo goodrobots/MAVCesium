@@ -16,6 +16,8 @@ from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerF
 from twisted.python import log
 from twisted.internet import reactor
 
+import webbrowser # open url's in browser window
+
 class ServerProtocol(WebSocketServerProtocol):
 
     def onConnect(self, request):
@@ -61,6 +63,7 @@ class CesiumModule(mp_module.MPModule):
         
         self.cesium_settings = mp_settings.MPSettings(
             [ ('localwebserver', bool, True),
+              ('openbrowser', bool, True),
               ('debug', bool, False)])
         
         self.aircraft = {'lat':None, 'lon':None, 'alt_wgs84':None,
@@ -74,6 +77,10 @@ class CesiumModule(mp_module.MPModule):
         
         self.run_web_server()
         self.run_socket_server()
+        
+        if self.cesium_settings.openbrowser:
+            self.open_display_in_browser()
+            
         
     def run_socket_server(self):
         # log.startLogging(sys.stdout)
@@ -101,13 +108,24 @@ class CesiumModule(mp_module.MPModule):
             self.web_server_thread = threading.Thread(target=cesium_web_server.start_server, kwargs={'debug':self.cesium_settings.debug})
             self.web_server_thread.daemon = True
             self.web_server_thread.start()
-    
+            self.mpstate.console.writeln('MAVCesium display loaded at http://127.0.0.1:5000/', fg='white', bg='blue')
+           
     def stop_web_server(self):
         if self.web_server_thread is not None:
             urllib2.urlopen('http://127.0.0.1:5000/exit') # Kill the web server
             while self.web_server_thread.isAlive():
                 time.sleep(0.01) #TODO: handle this better...
-        
+    
+    def open_display_in_browser(self):
+        if self.web_server_thread.isAlive():
+            url = 'http://127.0.0.1:5000/'
+            try:
+                browser_controller = webbrowser.get('google-chrome')
+                browser_controller.open_new_tab(url)
+            except:
+                webbrowser.open_new_tab(url)
+            
+            
     def send_data(self, data, target = None):
         '''push json data to the browser'''
         payload = json.dumps(data).encode('utf8')
