@@ -1,5 +1,6 @@
 var alt_lines = scene.primitives.add(new Cesium.PolylineCollection)
 var markers = scene.primitives.add(new Cesium.BillboardCollection)
+var labels = scene.primitives.add(new Cesium.LabelCollection)
 var paths = scene.primitives.add(new Cesium.PolylineCollection)
 
 function create_wp(id, wp_data){
@@ -42,8 +43,18 @@ function create_wp(id, wp_data){
             id : id,
             position : Cesium.Cartesian3.fromDegrees(wp_data.y, wp_data.x, wp_data.z+height_offset),
             image : '/static/DST/wp_icons/blu-blank.png',
-            verticalOrigin : Cesium.VerticalOrigin.BOTTOM
+            verticalOrigin : Cesium.VerticalOrigin.BOTTOM,
+            horizontalOrigin : Cesium.HorizontalOrigin.CENTER
+        });
         
+        labels.add({
+            id : id,
+            position : Cesium.Cartesian3.fromDegrees(wp_data.y, wp_data.x, wp_data.z+height_offset),
+            text : id,
+            font : '20px Arial',
+            pixelOffset : new Cesium.Cartesian2(0, -70),
+            horizontalOrigin : Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin : Cesium.VerticalOrigin.BOTTOM
         });
 	}
 	
@@ -54,6 +65,8 @@ function destroy_wp(id){
 	alt_lines.remove(wp_alt_line)
     var wp_marker = get_by_id(markers, id)
 	markers.remove(wp_marker)
+	var wp_label = get_by_id(labels, id)
+	labels.remove(wp_label)
 }
 
 function clear_mission(){

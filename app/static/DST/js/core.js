@@ -5,10 +5,10 @@ $(function () {
 	})
 
     
-    var position = Cesium.Cartesian3.fromDegrees(136.861933, -35.370903, -2000.0);
-    var yaw = Cesium.Math.toRadians(45.0);
-    var pitch = Cesium.Math.toRadians(15.0);
-    var roll = Cesium.Math.toRadians(10.0);
+    var position = Cesium.Cartesian3.fromDegrees(0, 0, -2000.0);
+    var yaw = Cesium.Math.toRadians(0);
+    var pitch = Cesium.Math.toRadians(0);
+    var roll = Cesium.Math.toRadians(0);
     var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, yaw, pitch, roll);
     var vehicle_offset_x = 25
     var vehicle_offset_y = 25
@@ -406,6 +406,7 @@ $(function () {
     var selected = {
     		marker : null,
     		alt_line : null,  // line that joins the wp to the ground (has same id as marker)
+    		label : null, // wp label (has same id as marker)
     		dragging : false,
     		camera_stored : false} // used for waypoint
 
@@ -487,7 +488,11 @@ $(function () {
                                                                                 
                                                                              cartographic.longitude,
                                                                              cartographic.latitude,
-                                                                             cartographic.height])
+                                                                             cartographic.height]);
+    	        
+    	        selected.label.position = Cesium.Cartesian3.fromRadians(cartographic.longitude,
+    	        		cartographic.latitude, cartographic.height+300);
+                                                                           
     	    }
     		return // get out of the mouse movement function here if we are dragging and have a wp selected
     		
@@ -514,7 +519,8 @@ $(function () {
         		// we dont select if we are dragging otherwise we can move wp's accidentally when panning the camera...
         		document.getElementsByTagName("body")[0].style.cursor = "pointer" // change the pointer to a hand
         		selected.marker.image= '/static/DST/wp_icons/ylw-blank.png'
-        		selected.alt_line = get_by_id(alt_lines, selected.marker.id) // 
+        		selected.alt_line = get_by_id(alt_lines, selected.marker.id) //
+        		selected.label = get_by_id(labels, selected.marker.id)
         	} else { // we have not picked a wp
         		clear_selected_marker()
         	}
