@@ -101,7 +101,8 @@ class CesiumModule(mp_module.MPModule):
             self.web_server_thread = threading.Thread(target=cesium_web_server.start_server, kwargs={'debug':self.cesium_settings.debug})
             self.web_server_thread.daemon = True
             self.web_server_thread.start()
-    
+            self.mpstate.console.writeln('MAVCesium display loaded at http://127.0.0.1:5000/', fg='white', bg='blue')
+            
     def stop_web_server(self):
         if self.web_server_thread is not None:
             urllib2.urlopen('http://127.0.0.1:5000/exit') # Kill the web server
