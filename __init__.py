@@ -63,7 +63,7 @@ class CesiumModule(mp_module.MPModule):
         
         self.cesium_settings = mp_settings.MPSettings(
             [ ('localwebserver', bool, True),
-              ('openbrowser', bool, True),
+              ('openbrowser', bool, False),
               ('debug', bool, False)])
         
         self.aircraft = {'lat':None, 'lon':None, 'alt_wgs84':None,
