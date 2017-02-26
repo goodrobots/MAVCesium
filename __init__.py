@@ -109,6 +109,8 @@ class CesiumModule(mp_module.MPModule):
         self.server_thread.daemon = True
         self.server_thread.start()
         
+        self.mpstate.console.writeln('MAVCesium display loaded at http://127.0.0.1:5000/', fg='white', bg='blue')
+        
     def stop_server(self):
         if self.server_thread is not None:
             reactor.callFromThread(reactor.stop) # Kill the server talking to the browser
