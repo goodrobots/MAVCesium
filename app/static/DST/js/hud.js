@@ -22,6 +22,9 @@ if (canvas_element.getContext){
 function resize_hud() {
 	canvas_element.height = window.innerHeight
 	canvas_height = window.innerHeight
+	
+	updateVideoDiv() // auto position the video element image draping
+	
 	if (hud_half_width == true) {
 		canvas_element.width  = window.innerWidth/2
 		canvas_width = window.innerWidth/2

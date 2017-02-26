@@ -153,9 +153,13 @@ $(function () {
             
 	        entity.orientation = Cesium.Transforms.headingPitchRollQuaternion(
 	        		aircraft.position, aircraft.yaw+Math.PI/2.0, -aircraft.pitch, -aircraft.roll);
+	        
+	        aircraft.orientation=entity.orientation
 	        entity.position = aircraft.position;
 	        
 	        draw_pos_target()
+	        
+	        updateSensorFootprint() //image draping
 	        
 	        if (track_vehicle.value){
 	        	scene.screenSpaceCameraController.enableRotate = true;
@@ -660,6 +664,8 @@ document.onkeypress = function(evt) {
     	console.log('zoom +')
     } else if (charStr == "h") {
     	hud.show = !hud.show
+    } else if (charStr == "c") {
+    	updateStillCaptureSensorFootprint() // image draping 
     } else {
     	//do nothing
     }

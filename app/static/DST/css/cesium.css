@@ -105,3 +105,12 @@ body .cesium-viewer .cesium-widget-credits {
     display: block;
     pointer-events:none;
 }
+
+#vid_div {
+    top:0px;
+    left:0px;
+    position: absolute;
+    display: block;
+    pointer-events:none;
+    visibility:hidden;
+}

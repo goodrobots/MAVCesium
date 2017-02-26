@@ -53,6 +53,9 @@ var entity_shadows = {value: false}
     //Enable depth testing so things behind the terrain disappear.
     viewer.scene.globe.depthTestAgainstTerrain = true;
     
+    viewer.scene.copyGlobeDepth = true; // for image draping
+    viewer.scene._environmentState.useGlobeDepthFramebuffer = true; // for image draping
+    
     var shadowMap = viewer.shadowMap;
     shadowMap.maxmimumDistance = 10000.0;
     shadowMap.size = 2048
