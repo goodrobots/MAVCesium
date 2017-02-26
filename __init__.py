@@ -3,7 +3,6 @@ Cesium map module
 Samuel Dudley
 Jan 2016
 '''
-
 import os, json, time, sys, uuid, urllib2
 
 from MAVProxy.modules.lib import mp_module
@@ -13,8 +12,14 @@ from pymavlink import mavutil
 import threading, Queue
 
 from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
-from twisted.python import log
+from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
+from twisted.web.server import Site
+from twisted.web.wsgi import WSGIResource
 from twisted.internet import reactor
+
+from twisted.python import log
+
+from app import cesium_web_server # the Flask webapp
 
 import webbrowser # open url's in browser window
 
@@ -62,9 +67,8 @@ class CesiumModule(mp_module.MPModule):
         self.flightmode = None
         
         self.cesium_settings = mp_settings.MPSettings(
-            [ ('localwebserver', bool, True),
-              ('openbrowser', bool, True),
-              ('debug', bool, False)])
+            [ ('openbrowser', bool, False),
+              ('debug', bool, True)])
         
         self.aircraft = {'lat':None, 'lon':None, 'alt_wgs84':None,
                          'roll':None, 'pitch':None, 'yaw':None}
@@ -72,48 +76,43 @@ class CesiumModule(mp_module.MPModule):
         self.fence = {}
         self.mission = {}
         
-        self.web_server_thread = None
-        self.socket_server_thread = None
+        self.server_thread = None
         
-        self.run_web_server()
-        self.run_socket_server()
+        self.run_server()
         
         if self.cesium_settings.openbrowser:
             self.open_display_in_browser()
             
         
-    def run_socket_server(self):
-        # log.startLogging(sys.stdout)
-        self.factory = WebSocketServerFactory(u"ws://0.0.0.0:9000")
+    def run_server(self):
+#         log.startLogging(sys.stdout)
+        
+        # create a Twisted Web resource for our WebSocket server
+        self.factory = WebSocketServerFactory(u"ws://0.0.0.0:5000")
         self.factory.protocol = ServerProtocol
         self.factory.setProtocolOptions(maxConnections=100)
         self.factory.data = {}
         self.factory.message_queue = Queue.Queue()
+        wsResource = WebSocketResource(self.factory)
         
-        reactor.listenTCP(9000, self.factory)
-        self.socket_server_thread = threading.Thread(target=reactor.run, args=(False,))
-        self.socket_server_thread.daemon = True
-        self.socket_server_thread.start()
+        # create a Twisted Web WSGI resource for our Flask server
+        wsgiResource = WSGIResource(reactor, reactor.getThreadPool(), cesium_web_server.app)
         
-    def stop_socket_server(self):
-        if self.socket_server_thread is not None:
-            reactor.callFromThread(reactor.stop) # Kill the socket server talking to the browser
-            while self.socket_server_thread.isAlive():
-                time.sleep(0.01) #TODO: handle this better...
+        # create a root resource serving everything via WSGI/Flask, but
+        # the path "/ws" served by our WebSocket stuff
+        rootResource = WSGIRootResource(wsgiResource, {b'ws': wsResource})
+    
+        # create a Twisted Web Site and run everything
+        site = Site(rootResource)
+        reactor.listenTCP(5000, site, interface='0.0.0.0')
+        self.server_thread = threading.Thread(target=reactor.run, args=(False,))
+        self.server_thread.daemon = True
+        self.server_thread.start()
         
-    def run_web_server(self):
-        '''optionally launch the webserver on the local machine'''
-        if self.cesium_settings.localwebserver:
-            from app import cesium_web_server
-            self.web_server_thread = threading.Thread(target=cesium_web_server.start_server, kwargs={'debug':self.cesium_settings.debug})
-            self.web_server_thread.daemon = True
-            self.web_server_thread.start()
-            self.mpstate.console.writeln('MAVCesium display loaded at http://127.0.0.1:5000/', fg='white', bg='blue')
-           
-    def stop_web_server(self):
-        if self.web_server_thread is not None:
-            urllib2.urlopen('http://127.0.0.1:5000/exit') # Kill the web server
-            while self.web_server_thread.isAlive():
+    def stop_server(self):
+        if self.server_thread is not None:
+            reactor.callFromThread(reactor.stop) # Kill the server talking to the browser
+            while self.server_thread.isAlive():
                 time.sleep(0.01) #TODO: handle this better...
     
     def open_display_in_browser(self):
@@ -278,8 +277,7 @@ class CesiumModule(mp_module.MPModule):
    
     def unload(self):
         '''unload module'''
-        self.stop_socket_server()
-        self.stop_web_server()
+        self.stop_server()
         
         
 def init(mpstate):
