@@ -17,14 +17,14 @@ function check_websocket(){
 };
 
 function open_websocket() {
-	socket = new WebSocket("ws://127.0.0.1:9000");
+	socket = new WebSocket(websocket);
 	socket.binaryType = "arraybuffer";
 	socket.onopen = function() {
 		console.log("WebSocket connected!");
 		isopen = true;
 	}
 	socket.onerror = function(e) {
-		console.log("WebSocket connection error.");
+		console.log("WebSocket connection error:", e);
 		socket = null;
         isopen = false;
 	}
