@@ -17,7 +17,7 @@ function check_websocket(){
 };
 
 function open_websocket() {
-	socket = new WebSocket("ws://127.0.0.1:5000/ws");
+	socket = new WebSocket(websocket);
 	socket.binaryType = "arraybuffer";
 	socket.onopen = function() {
 		console.log("WebSocket connected!");
