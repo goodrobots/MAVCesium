@@ -23,13 +23,17 @@ from app import cesium_web_server # the Flask webapp
 
 import webbrowser # open url's in browser window
 
+from app.config import SERVER_INTERFACE, SERVER_PORT, MODULE_DEBUG, APP_DEBUG
+
 class ServerProtocol(WebSocketServerProtocol):
 
     def onConnect(self, request):
-        print("Client connecting: {0}".format(request.peer))
+        if APP_DEBUG:
+            print("Client connecting: {0}".format(request.peer))
 
     def onOpen(self):
-        print("WebSocket connection open")
+        if APP_DEBUG:
+            print("WebSocket connection open")
         self.id = uuid.uuid4()
         self.factory.data[self.id]=self
         payload = {'new_connection':self.id}
@@ -45,8 +49,12 @@ class ServerProtocol(WebSocketServerProtocol):
             self.factory.message_queue.put(payload)
 
     def onClose(self, wasClean, code, reason):
-        print("WebSocket connection closed: {0}".format(reason))
-        del self.factory.data[self.id]
+        if APP_DEBUG:
+            print("WebSocket connection closed: {0}".format(reason))
+        try:
+            del self.factory.data[self.id]
+        except Exception as e:
+            print("An error occurred when attempting to close a websocket: {}".format(e))
 
         
 class CesiumModule(mp_module.MPModule):
@@ -68,7 +76,7 @@ class CesiumModule(mp_module.MPModule):
         
         self.cesium_settings = mp_settings.MPSettings(
             [ ('openbrowser', bool, False),
-              ('debug', bool, True)])
+              ('debug', bool, MODULE_DEBUG)])
         
         self.aircraft = {'lat':None, 'lon':None, 'alt_wgs84':None,
                          'roll':None, 'pitch':None, 'yaw':None}
@@ -88,7 +96,7 @@ class CesiumModule(mp_module.MPModule):
 #         log.startLogging(sys.stdout)
         
         # create a Twisted Web resource for our WebSocket server
-        self.factory = WebSocketServerFactory(u"ws://0.0.0.0:5000")
+        self.factory = WebSocketServerFactory(u"ws://"+SERVER_INTERFACE+":"+SERVER_PORT)
         self.factory.protocol = ServerProtocol
         self.factory.setProtocolOptions(maxConnections=100)
         self.factory.data = {}
@@ -104,12 +112,12 @@ class CesiumModule(mp_module.MPModule):
     
         # create a Twisted Web Site and run everything
         site = Site(rootResource)
-        reactor.listenTCP(5000, site, interface='0.0.0.0')
+        reactor.listenTCP(int(SERVER_PORT), site, interface=SERVER_INTERFACE)
         self.server_thread = threading.Thread(target=reactor.run, args=(False,))
         self.server_thread.daemon = True
         self.server_thread.start()
         
-        self.mpstate.console.writeln('MAVCesium display loaded at http://127.0.0.1:5000/', fg='white', bg='blue')
+        self.mpstate.console.writeln('MAVCesium display loaded at http://'+SERVER_INTERFACE+":"+SERVER_PORT+'/', fg='white', bg='blue')
         
     def stop_server(self):
         if self.server_thread is not None:
@@ -119,7 +127,7 @@ class CesiumModule(mp_module.MPModule):
     
     def open_display_in_browser(self):
         if self.web_server_thread.isAlive():
-            url = 'http://127.0.0.1:5000/'
+            url = 'http://'+SERVER_INTERFACE+":"+SERVER_PORT+'/'
             try:
                 browser_controller = webbrowser.get('google-chrome')
                 browser_controller.open_new_tab(url)

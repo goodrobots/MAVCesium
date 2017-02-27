@@ -5,7 +5,7 @@ Samuel Dudley
 Jan 2016
 '''
 
-
+from config import SERVER_INTERFACE, SERVER_PORT, FLASK_SECRET_KEY, WEBSOCKET, BING_API_KEY
                 
 import os, sys, json, uuid
 
@@ -26,14 +26,12 @@ except: # otherwise fall back to the standard file system
     APP_TEMPLATES = os.path.join(APP_ROOT, 'templates')
 
 app = Flask(__name__, root_path=APP_ROOT, template_folder=APP_TEMPLATES, static_folder=APP_STATIC)
-app.secret_key = str(uuid.uuid4())
+app.secret_key = FLASK_SECRET_KEY
 
-with open(os.path.join(APP_ROOT, 'api_keys.txt', )) as fid:    
-    api_keys = json.load(fid)
 
 @app.route('/')
 def index():
-    return render_template('index.html', bing_api_key=api_keys['bing'])
+    return render_template('index.html', bing_api_key=BING_API_KEY, websocket=WEBSOCKET)
 
 @app.route('/context/', methods=['POST'])
 def get_current_context():
@@ -49,7 +47,7 @@ def start_server(debug = False):
         log = logging.getLogger('werkzeug')
         log.setLevel(logging.ERROR)
      
-    app.run(host='0.0.0.0',port=5000)
+    app.run(host=SERVER_INTERFACE ,port=SERVER_PORT)
      
 if __name__ == '__main__':
     start_server()
