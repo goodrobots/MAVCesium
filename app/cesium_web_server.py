@@ -4,7 +4,9 @@ Flask server for Cesium map module
 Samuel Dudley
 Jan 2016
 '''
-                             
+
+
+                
 import os, sys, json, uuid
 
 from flask import (
@@ -40,25 +42,16 @@ def get_current_context():
         markers = False
     return render_template('context_menu.html', markers=markers)
     
-@app.route('/exit', methods=["GET"])
-def exit():
-    shutdown_server()
-    return "web server shutting down..."
-    
-def shutdown_server():
-    shutdown_func = request.environ.get('werkzeug.server.shutdown')
-    shutdown_func()
-
 def start_server(debug = False):
-    
+  
     if not debug:
         import logging
         log = logging.getLogger('werkzeug')
         log.setLevel(logging.ERROR)
-    
+     
     app.run(host='0.0.0.0',port=5000)
-    
+     
 if __name__ == '__main__':
     start_server()
-    
+     
     
