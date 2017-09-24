@@ -23,6 +23,9 @@
     <script>
         var bing_api_key = '{{ escape(bing_api_key) }}';
         var websocket = '{{ escape(websocket) }}';
+        if (!websocket || /null/.test(websocket) || /localhost/.test(websocket) || /0.0.0.0/.test(websocket)) {
+            websocket = ("ws://" + window.location.hostname + ":" + window.location.port + "/websocket/");
+          }
     </script>
     
   </head>
@@ -70,6 +73,6 @@
 	<script src="{{ static_url("DST/js/context_menu.js")}}" type="text/javascript"></script>
 	<script src="{{ static_url("DST/js/settings.js")}}" type="text/javascript"></script>
 	<script src="{{ static_url("DST/js/hud.js")}}" type="text/javascript"></script>
-    <script src="{{ static_url("DST/js/websocket.js")}}" type="text/javascript"></script>
-	</body>
+	<script src="{{ static_url("DST/js/websocket.js")}}" type="text/javascript"></script>
+  </body>
 </html>

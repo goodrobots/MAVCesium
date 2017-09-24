@@ -38,13 +38,13 @@ for _conf_file_path in _conf_file_paths:
     
             SERVER_INTERFACE = _conf.get('general', 'server_interface')
             SERVER_PORT = _conf.get('general', 'server_port')
-            WEBSOCKET = "http://"+SERVER_INTERFACE+":"+SERVER_PORT+"/ws"
+            WEBSOCKET = str("ws://" + _conf.get('general', 'websocket_interface') + ":" + _conf.get('general', 'websocket_port') + "/websocket/")
             
             BING_API_KEY = _conf.get('api_keys', 'bing')
 
-            FLASK_SECRET_KEY = _conf.get('general', 'flask_secret_key')
-            if FLASK_SECRET_KEY == '':
-                FLASK_SECRET_KEY = str(uuid.uuid4())
+            APP_SECRET_KEY = _conf.get('general', 'app_secret_key')
+            if APP_SECRET_KEY == '':
+                APP_SECRET_KEY = str(uuid.uuid4())
                 
             APP_DEBUG = parse_bool(_conf.get('debug', 'app_debug'))
             MODULE_DEBUG = parse_bool(_conf.get('debug', 'module_debug'))

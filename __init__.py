@@ -76,7 +76,7 @@ class CesiumModule(mp_module.MPModule):
             except:
                 webbrowser.open_new_tab(url)
                 
-    def websocket_out_callback(self, data):
+    def callback(self, data):
         '''callback for data coming in from a websocket'''
         self.message_queue.put_nowait(data)
             

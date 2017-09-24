@@ -1,5 +1,3 @@
-var url = "ws://" + location.host + "/websocket/";
-
 var socket = null;
 var isopen = false;
 if ("WebSocket" in window) {
@@ -19,7 +17,7 @@ function check_websocket(){
 };
 
 function open_websocket() {
-	socket = new WebSocket(url);
+	socket = new WebSocket(websocket);
 	socket.binaryType = "arraybuffer";
 	socket.onopen = function() {
 		console.log("WebSocket connected!");
