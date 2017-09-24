@@ -1,3 +1,5 @@
+var url = "ws://" + location.host + "/websocket/";
+
 var socket = null;
 var isopen = false;
 if ("WebSocket" in window) {
@@ -17,7 +19,7 @@ function check_websocket(){
 };
 
 function open_websocket() {
-	socket = new WebSocket(websocket);
+	socket = new WebSocket(url);
 	socket.binaryType = "arraybuffer";
 	socket.onopen = function() {
 		console.log("WebSocket connected!");
@@ -28,6 +30,25 @@ function open_websocket() {
 		socket = null;
         isopen = false;
 	}
+//	socket.onmessage = function(event) {
+//		if (typeof event.data == "string") {
+//			    try {
+//			    	response = JSON.parse(event.data);
+//			    } catch (e) {
+//			    	console.log(event.data)
+//			        return false;
+//			    }
+//			console.log(response);
+//			if (response.mavlink_data) {
+//				update_data_stream(response.mavlink_data);
+//			}
+//			if (response.json_data) {
+//			    func = response.json_data.replyto
+//			    args = response.json_data
+//				window[func](args); // execute the name of the function that came from the json as 'replyto', pass it the json-as-javascript.
+//			}			
+//		}
+//	}
 	socket.onmessage = function(e) {
 		if (typeof e.data == "string") {
 			response = JSON.parse(e.data)

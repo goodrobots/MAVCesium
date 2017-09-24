@@ -38,7 +38,7 @@ for _conf_file_path in _conf_file_paths:
     
             SERVER_INTERFACE = _conf.get('general', 'server_interface')
             SERVER_PORT = _conf.get('general', 'server_port')
-            WEBSOCKET = "ws://"+SERVER_INTERFACE+":"+SERVER_PORT+"/ws"
+            WEBSOCKET = "http://"+SERVER_INTERFACE+":"+SERVER_PORT+"/ws"
             
             BING_API_KEY = _conf.get('api_keys', 'bing')
 
