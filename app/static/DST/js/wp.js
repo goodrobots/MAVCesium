@@ -18,7 +18,7 @@ function create_wp(id, wp_data){
 			wp_data.y, wp_data.x, 5000, new Cesium.Cartographic()
 		);
 	  	// Sample the terrain (async)
-	  	Cesium.sampleTerrain(viewer.terrainProvider, 11, [ pointOfInterest ]).then(function(samples) {
+	  	Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, [ pointOfInterest ]).then(function(samples) {
 	  		height_offset = samples[0].height
 	  		add_visuals()
 		});
@@ -36,7 +36,7 @@ function create_wp(id, wp_data){
             width : 1,
             material : Cesium.Material.fromType('Color', {
                 color : Cesium.Color.BLACK
-                }) //DODGERBLUE
+                })
         });
         
         markers.add({
@@ -50,7 +50,7 @@ function create_wp(id, wp_data){
         labels.add({
             id : id,
             position : Cesium.Cartesian3.fromDegrees(wp_data.y, wp_data.x, wp_data.z+height_offset),
-            text : id,
+            text : 'WP '+id,
             font : '20px Arial',
             pixelOffset : new Cesium.Cartesian2(0, -70),
             horizontalOrigin : Cesium.HorizontalOrigin.CENTER,

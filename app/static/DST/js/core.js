@@ -4,17 +4,19 @@ $(function () {
 	  $('[data-toggle="tooltip"]').tooltip()
 	})
 
-    
-    var position = Cesium.Cartesian3.fromDegrees(0, 0, -2000.0);
-    var yaw = Cesium.Math.toRadians(0);
-    var pitch = Cesium.Math.toRadians(0);
-    var roll = Cesium.Math.toRadians(0);
-    var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, yaw, pitch, roll);
     var vehicle_offset_x = 25
     var vehicle_offset_y = 25
     var vehicle_offset_z = 25
     var vehicle_model = '/static/DST/models/rat.gltf'
     
+    var position = Cesium.Cartesian3.fromDegrees(0, 0, 0);
+    var heading = 0;
+    var pitch = 0;
+    var roll = 0;
+    var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+    var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+    	
+    	
     vehicle_offset = new Cesium.Cartesian3(vehicle_offset_x,vehicle_offset_y,vehicle_offset_z)
     viewer.entities.add({
     	id : "vehicle",
@@ -52,8 +54,8 @@ $(function () {
     var hud = {show:true}
 
     var aircraft = {}
-    var pos_target = {lat:null, lon:null, alt_wgs84:null, color:Cesium.Color.FUSCHIA, show:true}
-    var fence = {points:[], show:true, color:Cesium.Color.GREEN.withAlpha(0.2), alt_agl:500}
+    var pos_target = {lat:null, lon:null, alt_wgs84:null, show:true, color:Cesium.Color.FUSCHIA}
+    var fence = {points:[], show:true, alt_agl:500} //color:Cesium.Color.GREEN
     var home_alt_wgs84 = undefined
     var data_stream = {}
     var flightmode = null
@@ -77,7 +79,6 @@ $(function () {
     
     function update_fence_data(fence_data) {
         console.log(fence_data)
-        var cssColor = '#ff0000';
         
         fence.points = []
         
@@ -89,7 +90,7 @@ $(function () {
         				fence_data[point].lng, fence_data[point].lat, 5000, new Cesium.Cartographic()
         			);
 				  	// Sample the terrain (async)
-				  	Cesium.sampleTerrain(viewer.terrainProvider, 11, [ pointOfInterest ]).then(function(samples) {
+				  	Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, [ pointOfInterest ]).then(function(samples) {
 				  		terrain_sample_height = samples[0].height
 				  	});
 				  	fence.points.push(fence_data[point].lng, fence_data[point].lat, fence.alt_agl+terrain_sample_height); //[ lon, lat, alt, lon, lat, alt, etc. ]
@@ -104,8 +105,8 @@ $(function () {
     		var fence_wall = viewer.entities.add({
 		    	id : "fence_wall",
 		    	wall : {
-		    		positions: Cesium.Cartesian3.fromDegreesArrayHeights( fence.points ),
-		    		material: fence.color
+		    		positions: Cesium.Cartesian3.fromDegreesArrayHeights( fence.points )
+//		    		material: fence.color
 		    	},
 		    	show : fence.show
 		     })
@@ -114,7 +115,6 @@ $(function () {
     
     function update_mission_data(mision_data) {
  
-        var cssColor = '#00ff00';
         var points = [];
         
         for (var point in mision_data){
@@ -143,17 +143,20 @@ $(function () {
     function update_aircraft_data() {
     	if (data_stream.ATTITUDE && data_stream.GLOBAL_POSITION_INT) {
             var entity = viewer.entities.getById('vehicle');
-            aircraft.lat = data_stream.GLOBAL_POSITION_INT.lat*Math.pow(10.0, -7)
-            aircraft.lon = data_stream.GLOBAL_POSITION_INT.lon*Math.pow(10.0, -7)
-            aircraft.alt_wgs84 = data_stream.GLOBAL_POSITION_INT.alt*Math.pow(10.0, -3)
+            
+            aircraft.lat = data_stream.GLOBAL_POSITION_INT.lat*Math.pow(10.0, -7);
+            aircraft.lon = data_stream.GLOBAL_POSITION_INT.lon*Math.pow(10.0, -7);
+            aircraft.alt_wgs84 = data_stream.GLOBAL_POSITION_INT.alt*Math.pow(10.0, -3);
             aircraft.roll = data_stream.ATTITUDE.roll
             aircraft.pitch = data_stream.ATTITUDE.pitch
             aircraft.yaw = data_stream.ATTITUDE.yaw
-            aircraft.position = Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84);
             
-	        entity.orientation = Cesium.Transforms.headingPitchRollQuaternion(
-	        		aircraft.position, aircraft.yaw+Math.PI/2.0, -aircraft.pitch, -aircraft.roll);
-	        entity.position = aircraft.position;
+            var position = Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84);
+		    var hpr = new Cesium.HeadingPitchRoll(aircraft.yaw+Math.PI/2, -aircraft.pitch, -aircraft.roll);
+		    var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+		    
+		    entity.position = position;
+		    entity.orientation = orientation;
 	        
 	        draw_pos_target()
 	        
@@ -271,6 +274,7 @@ $(function () {
     	if (pos_target_line != null){
     		pos_target_lines.remove(pos_target_line)
     	}
+    	
     	pos_target_lines.add({
             id : 'pos_target_line',
             show : pos_target.show,
@@ -279,7 +283,7 @@ $(function () {
             width : 1,
             material : Cesium.Material.fromType('Color', {
                 color : pos_target.color
-                })
+            })
         })
     		
     }
@@ -424,7 +428,6 @@ $(function () {
 	        var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6); // can use these values in the UI
 	        var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
 	        var heightString = cartographic.height.toFixed(1)
-	        // console.log(longitudeString, latitudeString, heightString)
 	        document.getElementById('cursor_location').innerHTML = 'Cursor: '+latitudeString+' '+longitudeString+' '+heightString+'m';
 	    }
     	
@@ -587,7 +590,7 @@ $(function () {
             create_wp(Cesium.Math.toDegrees(ray_cartographic.latitude), Cesium.Math.toDegrees(ray_cartographic.longitude), ray_cartographic.height+300)
     	}
     
-    }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
     
     
     // handle left up with wp selected
@@ -610,43 +613,54 @@ $(function () {
     	console.log('restore', camera_state)
     }, Cesium.ScreenSpaceEventType.LEFT_UP);
 
-    
 
+var right_data = {x:undefined, y:undefined}
+
+$('#cesium_container').mousedown(function (evt) {
+	if (evt.which === 3) { // right-click
+		right_data.x = evt.screenX;
+		right_data.y = evt.screenY;
+	}
+});
+    
+    
 $('#cesium_container').mouseup(function (evt) {
-	  if (evt.which === 3) { // right-click
-	    /* if you wanted to be less strict about what
-	       counts as a double click you could use
-	       evt.originalEvent.detail > 1 instead */
-	    if (evt.originalEvent.detail === 2 && selected.marker != null) { 
-	      console.log('Double right-click on marker');
-	      $.post("/context/", {markers: JSON.stringify(selected.marker.id)}, function(data){
-	    	  $('#contextMenu').html(data);
-	    	  console.log(data)
-	      })
-	      $contextMenu.css({
-	          display: "block",
-	          left: evt.pageX,
-	          top: evt.pageY
-	       });
-	    
-	    } else if (evt.originalEvent.detail === 2) { 
-            console.log('Double right-click NOT on marker');
-            $.post("/context/", {markers: JSON.stringify(null)} , function(data){
-            	$('#contextMenu').html(data);
-            	console.log(data)
-            })
-            
-            $contextMenu.css({
-                display: "block",
-                left: evt.pageX,
-                top: evt.pageY
-            });
-	    
-	    } else if (evt.originalEvent.detail === 1) { 
-	    	console.log('Single right-click');
-	    }
-	  }
-	});
+	if (evt.which === 3) { // right-click
+		
+		// check to see how far we have moved the mouse...
+		// are we moving the camera or trying to click?
+		if (Math.sqrt(Math.pow(evt.screenX-right_data.x, 2)+Math.pow(evt.screenY-right_data.y, 2))< 10){
+			// its a click without drag
+
+			if (evt.originalEvent.detail === 1 && selected.marker != null) { 
+			  console.log('Single right-click on marker');
+			  $.post("/context/", {markers: JSON.stringify(selected.marker.id)}, function(data){
+				  $('#contextMenu').html(data);
+				  console.log(data)
+			  })
+			  $contextMenu.css({
+			      display: "block",
+			      left: evt.pageX,
+			      top: evt.pageY
+			   });
+			
+			} else if (evt.originalEvent.detail === 1) { 
+			    console.log('Single right-click NOT on marker');
+			    $.post("/context/", {markers: JSON.stringify(null)} , function(data){
+			    	$('#contextMenu').html(data);
+			    	console.log(data)
+			    })
+			    
+			    $contextMenu.css({
+			        display: "block",
+			        left: evt.pageX,
+			        top: evt.pageY
+			    });
+			    
+			}
+		}
+	}
+});
 
 document.onkeypress = function(evt) {
     evt = evt || window.event;
