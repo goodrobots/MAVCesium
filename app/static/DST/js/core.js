@@ -43,19 +43,20 @@ $(function () {
     
     var playback = {value: false}
     
-    var god_view = {value: false,
+    var top_view = {value: false,
     		init_flag: false,
     		alt: 150}
     
     var fpv_view = {value: false}
     var free_view = {value: true}
+    var mount_view = {value: false}
     
-    var views = [god_view, fpv_view, free_view]
+    var views = [top_view, fpv_view, free_view, mount_view]
     var hud = {show:true}
 
     var aircraft = {}
-    var pos_target = {lat:null, lon:null, alt_wgs84:null, show:true, color:Cesium.Color.FUSCHIA}
-    var fence = {points:[], show:true, alt_agl:500} //color:Cesium.Color.GREEN
+    var pos_target = {lat:null, lon:null, alt_wgs84:null, show:true, color:Cesium.Color.FUCHSIA}
+    var fence = {points:[], show:true, alt_agl:500, color:Cesium.Color.GREEN}
     var home_alt_wgs84 = undefined
     var data_stream = {}
     var flightmode = null
@@ -106,7 +107,6 @@ $(function () {
 		    	id : "fence_wall",
 		    	wall : {
 		    		positions: Cesium.Cartesian3.fromDegreesArrayHeights( fence.points )
-//		    		material: fence.color
 		    	},
 		    	show : fence.show
 		     })
@@ -151,12 +151,12 @@ $(function () {
             aircraft.pitch = data_stream.ATTITUDE.pitch
             aircraft.yaw = data_stream.ATTITUDE.yaw
             
-            var position = Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84);
-		    var hpr = new Cesium.HeadingPitchRoll(aircraft.yaw+Math.PI/2, -aircraft.pitch, -aircraft.roll);
-		    var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+            aircraft.position = Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84);
+		    aircraft.hpr = new Cesium.HeadingPitchRoll(aircraft.yaw+Math.PI/2, -aircraft.pitch, -aircraft.roll);
+		    aircraft.orientation = Cesium.Transforms.headingPitchRollQuaternion(aircraft.position, aircraft.hpr);
 		    
-		    entity.position = position;
-		    entity.orientation = orientation;
+		    entity.position = aircraft.position;
+		    entity.orientation = aircraft.orientation;
 	        
 	        draw_pos_target()
 	        
@@ -178,21 +178,21 @@ $(function () {
                 scene.screenSpaceCameraController.enableLook = true;
 	        }
 	        
-	        if (god_view.value){
+	        if (top_view.value){
 	        	
 	        	viewer.trackedEntity = undefined
 	        	
-	        	if (god_view.init_flag){ //if this is the first time the god_view has been called since pushing the button
+	        	if (top_view.init_flag){ //if this is the first time the top_view has been called since pushing the button
 	                // 2 Set view with heading, pitch and roll
 	                viewer.camera.setView({
-	                	destination : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+god.view_alt),
+	                	destination : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+top.view_alt),
 	                    orientation: {
 	                        heading : 0.0,
 	                        pitch : -Cesium.Math.PI_OVER_TWO,
 	                        roll : 0.0               
 	                    }
 	                });
-	                god_view.init_flag = false
+	                top_view.init_flag = false
 	        	}
 	        	
 	        	// 1. Set position with a top-down view
@@ -201,7 +201,7 @@ $(function () {
                 
 	        	if (track_vehicle.value){
 	        		// disable the default event handlers
-	        		// zooming is handled by the custom event handle only active in 'god_view'
+	        		// zooming is handled by the custom event handle only active in 'top_view'
 	        		scene.screenSpaceCameraController.enableRotate = false;
 	                scene.screenSpaceCameraController.enableTranslate = false;
 	                scene.screenSpaceCameraController.enableZoom = false;
@@ -210,7 +210,7 @@ $(function () {
 	        		
 	                
 	        		viewer.camera.setView({
-	        			destination : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+god_view.alt),
+	        			destination : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+top_view.alt),
                         heading : 0.0,
                         pitch : -Cesium.Math.PI_OVER_TWO,
                         roll : 0.0
@@ -228,7 +228,7 @@ $(function () {
 	                scene.screenSpaceCameraController.enableLook = false;
 	                
 	        		viewer.camera.setView({
-	        			position : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+god.view_alt),
+	        			position : Cesium.Cartesian3.fromDegrees(aircraft.lon, aircraft.lat, aircraft.alt_wgs84+top.view_alt),
                         heading : 0.0,
                         pitch : -Cesium.Math.PI_OVER_TWO,
                         roll : 0.0
@@ -240,7 +240,26 @@ $(function () {
 	        
 	        if (fpv_view.value){
 	        	viewer.trackedEntity = undefined
-	        	// 2 Set view with heading, pitch and roll
+	        	// 2 Set view with heading, pitch and roll of aircraft
+	        	scene.screenSpaceCameraController.enableRotate = false;
+                scene.screenSpaceCameraController.enableTranslate = false;
+                scene.screenSpaceCameraController.enableZoom = false;
+                scene.screenSpaceCameraController.enableTilt = false;
+                scene.screenSpaceCameraController.enableLook = false;
+                
+                viewer.camera.setView({
+	        	    destination : aircraft.position,
+	        	    orientation: {
+	        	        heading : aircraft.yaw,
+	        	        pitch : aircraft.pitch,
+	        	        roll : aircraft.roll
+	        	    }
+	        	});
+	        }
+	        
+	        if (mount_view.value){
+	        	viewer.trackedEntity = undefined
+	        	// 3 Set view with heading, pitch and roll of mount (attached to aircraft)
 	        	scene.screenSpaceCameraController.enableRotate = false;
                 scene.screenSpaceCameraController.enableTranslate = false;
                 scene.screenSpaceCameraController.enableZoom = false;
@@ -332,7 +351,7 @@ $(function () {
     }
 
         
-    toggle_god_view = function(btn_ref, var_to_toggle) {
+    toggle_top_view = function(btn_ref, var_to_toggle) {
         update_view_control(var_to_toggle)
             if (var_to_toggle.vale){
             	var_to_toggle.init_flag = true
@@ -343,6 +362,10 @@ $(function () {
     toggle_free_view = function(btn_ref, var_to_toggle) {
     	update_view_control(var_to_toggle)
     }
+    
+    toggle_mount_view = function(btn_ref, var_to_toggle) {
+    	update_view_control(var_to_toggle)
+    }
          
     
     // setup an event handler for the mouse wheel
@@ -351,10 +374,10 @@ $(function () {
     wheel_handler.setInputAction(function(event) {
     	var mousePosition = scene.camera.position;
         //var height = ellipsoid.cartesianToCartographic(mousePosition).height;
-        if (god_view.value){
-        	god_view.alt = god_view.alt - event
-        	if (god_view.alt < 10){ // if this value goes -ve then we have zoomed in past the vehicle and can no longer see it
-        		god_view.alt = 10 // limit the zoom level
+        if (top_view.value){
+        	top_view.alt = top_view.alt - event
+        	if (top_view.alt < 10){ // if this value goes -ve then we have zoomed in past the vehicle and can no longer see it
+        		top_view.alt = 10 // limit the zoom level
         	}
         }
     }, Cesium.ScreenSpaceEventType.WHEEL);
@@ -617,50 +640,35 @@ $(function () {
 var right_data = {x:undefined, y:undefined}
 
 $('#cesium_container').mousedown(function (evt) {
+	console.log('mouse down', evt)
 	if (evt.which === 3) { // right-click
 		right_data.x = evt.screenX;
 		right_data.y = evt.screenY;
 	}
 });
     
-    
-$('#cesium_container').mouseup(function (evt) {
-	if (evt.which === 3) { // right-click
-		
-		// check to see how far we have moved the mouse...
-		// are we moving the camera or trying to click?
-		if (Math.sqrt(Math.pow(evt.screenX-right_data.x, 2)+Math.pow(evt.screenY-right_data.y, 2))< 10){
-			// its a click without drag
+var right_click_handler = new Cesium.ScreenSpaceEventHandler(canvas);
+right_click_handler.setInputAction(function(event){
 
-			if (evt.originalEvent.detail === 1 && selected.marker != null) { 
-			  console.log('Single right-click on marker');
-			  $.post("/context/", {markers: JSON.stringify(selected.marker.id)}, function(data){
-				  $('#contextMenu').html(data);
-				  console.log(data)
-			  })
-			  $contextMenu.css({
-			      display: "block",
-			      left: evt.pageX,
-			      top: evt.pageY
-			   });
-			
-			} else if (evt.originalEvent.detail === 1) { 
-			    console.log('Single right-click NOT on marker');
-			    $.post("/context/", {markers: JSON.stringify(null)} , function(data){
-			    	$('#contextMenu').html(data);
-			    	console.log(data)
-			    })
-			    
-			    $contextMenu.css({
-			        display: "block",
-			        left: evt.pageX,
-			        top: evt.pageY
-			    });
-			    
-			}
-		}
+	if (selected.marker != null) {
+		console.log('Single right-click on marker');
+		$.post("/context/", {markers: JSON.stringify(selected.marker.id)}, function(data){
+			$('#contextMenu').html(data);
+			console.log(data)
+		})
+	} else { 
+		console.log('Single right-click NOT on marker');
+			$.post("/context/", {markers: JSON.stringify(null)} , function(data){
+			$('#contextMenu').html(data);
+			console.log(data)
+		})
 	}
-});
+	$contextMenu.css({
+		display: "block",
+		left: event.position.x,
+		top: event.position.y
+	});
+}, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
 
 document.onkeypress = function(evt) {
     evt = evt || window.event;

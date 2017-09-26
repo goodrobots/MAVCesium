@@ -1,7 +1,5 @@
 $contextMenu.on("click", "a", function(evt) {
-	console.log('CLICK!')
 	console.log(evt)
-	console.log('CLICK!')
 	evt.preventDefault();
     console.log(evt.target.innerText)
     console.log(evt.target.href)
