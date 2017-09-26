@@ -15,7 +15,7 @@ The project is designed to run on a local machine to maximise performance, howev
 ![screenshot 3 of webapp](https://github.com/SamuelDudley/MAVCesium/blob/gh-pages/screenshots/NO_HUD.png "screenshot with no HUD")
 
 ### Development
-Currently in alpha this module has been heavily re-worked to reduce dependencies and increase cross platform support. Although currently under development, this module provides a usable position and attitude display, HUD, geofence display and limited mission display capabilities.
+Although currently under development, this module provides a usable position and attitude display, HUD, geofence display and limited mission display capabilities.
  
 On the TODO list...
 * Improved mission display and planning capabilities
@@ -26,10 +26,10 @@ On the TODO list...
 * Support responsive layouts
 * etc...
 
-Development is being undertaken on a Ubuntu 14.04 x64 machine and has been tested on a 16.04 x64 machine. As the dependencies are pure python I expect it will install and run on a windows machine, however this is currently untested.
+Development is being undertaken on a Ubuntu 16.04 x64 machine and has been tested on a 14.04 x64 machine. As the (few) dependencies are pure python I expect it will install and run on a windows machine, however this is currently untested.
 
 ### How it works
-When you load the MAVCesium module two servers are created by default: A [flask web server](http://flask.pocoo.org/) and a twisted web socket server. The flask server handles static data requests while the twisted web socket streams JSON between [MAVProxy](https://github.com/Dronecode/MAVProxy) and the webgl enabled browser, driving the display.
+When you load the MAVCesium module a single [tornado server](http://www.tornadoweb.org/en/stable/) is created. This server handles handles static data requests while also streaming JSON between [MAVProxy](https://github.com/Dronecode/MAVProxy) and your webgl enabled browser, driving the display.
 
 The display is updated only as new data is received via the telemetry stream, so the faster the telemetry stream the 'smoother' the display update will be.
 
@@ -48,13 +48,11 @@ The display is updated only as new data is received via the telemetry stream, so
  ```
  git clone --recursive https://github.com/Dronecode/MAVProxy.git
  ```
- You can then install MAVProxy as per the [developer guide](https://dronecode.github.io/MAVProxy/html/development/mavdevenv.html):
+ You can then install MAVProxy as per the [developer guide](http://ardupilot.github.io/MAVProxy/html/development/index.html):
  ```
  cd MAVProxy
  python setup.py build install --user
  ```
- 
-* (**Optional**) Get a free bing maps api key from [here](https://www.bingmapsportal.com/) and insert the key in the empty quotation marks within [api_keys.txt](https://github.com/SamuelDudley/MAVCesium/blob/master/app/api_keys.txt#L1). As an example the updated contents would look like this: `{"bing":"YourApiKeyFromBingMapsPortalDotCom"}`
 * Run [MAVProxy](https://github.com/Dronecode/MAVProxy) and load the MAVCesium module with the `module load cesium` command in the MAVProxy console
 * Point your webgl enabled browser to http://127.0.0.1:5000/ and once you start receiving valid mavlink messages from the vehicle connected to the MAVProxy ground station you will see the vehicle model in the center of your screen with a HUD overlay
 
@@ -76,8 +74,7 @@ Some of the other projects which go into MAVCesium are:
 [Cesium](https://github.com/AnalyticalGraphicsInc/cesium)
 [MAVProxy](https://github.com/Dronecode/MAVProxy)
 [Ardupilot](http://ardupilot.org/ardupilot/index.html)
-[autobahn-python](https://github.com/crossbario/autobahn-python)
-[flask](http://flask.pocoo.org/)
+[tornado](http://www.tornadoweb.org/en/stable/)
 [jQuery](https://jquery.com/)
 [Bootstrap](http://getbootstrap.com/)
 [Font Awesome](http://fontawesome.io/)
