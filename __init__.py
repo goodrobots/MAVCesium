@@ -11,7 +11,7 @@ from MAVProxy.modules.lib import mp_settings
 from pymavlink import mavutil
 import threading, Queue
 
-from app import cesium_web_server # the Flask webapp
+from app import cesium_web_server # the tornado web server
 
 import webbrowser # open url's in browser window
 

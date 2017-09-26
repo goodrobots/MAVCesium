@@ -1,22 +1,24 @@
 $contextMenu.on("click", "a", function(evt) {
+	console.log('CLICK!')
 	console.log(evt)
+	console.log('CLICK!')
 	evt.preventDefault();
-    console.log(evt.target.outerText)
+    console.log(evt.target.innerText)
     console.log(evt.target.href)
     console.log(evt.target.id)
     $contextMenu.hide();
     
-    if (evt.target.outerText === 'Remove'){
+    if (evt.target.innerText === 'Remove'){
     	// we wish to remove the WP
     	send(JSON.stringify({wp_remove: evt.target.id}));
     	//destroy_wp(evt.target.id)
     }
 
-    if (evt.target.outerText === 'Set'){
-    	// we wish to remove the WP   	
+    if (evt.target.innerText === 'Set'){
+    	// we wish ts set this as the current WP   	
     	send(JSON.stringify({wp_set: evt.target.id}));
     }
-    if (evt.target.outerText === 'Show Landing Zone'){
+    if (evt.target.innerText === 'Show Landing Zone'){
     	show_landing_zone.value = !show_landing_zone.value
     	if (show_landing_zone.value){
 		    var landing_zone_outer = new Cesium.GeometryInstance({
@@ -80,8 +82,8 @@ $contextMenu.on("click", "a", function(evt) {
 });
  
 $contextMenu.on("mouseover", "a", function(evt){
-    console.log(evt.target.outerText)
-    console.log(evt.target.href)
+	console.log(evt)
+    console.log(evt.target.innerText)
     console.log(evt.target.id)
     var marker = get_by_id(markers, evt.target.id)
     

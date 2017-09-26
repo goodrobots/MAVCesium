@@ -28,15 +28,14 @@ except: # otherwise fall back to the standard file system
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("index.html", bing_api_key=BING_API_KEY, websocket=WEBSOCKET)
+        self.render("index.html", bing_api_key=BING_API_KEY, websocket=WEBSOCKET, markers=False)
         
 class ContextHandler(tornado.web.RequestHandler):
     def post(self):
-
-#     markers = [str(request.values.get('markers')).lstrip('"').rstrip('"')]
-#     if 'null' in markers:
-        # TODO: Fix marker menu
-        self.render("context_menu.html")#, markers=self.markers)
+        markers = [self.get_argument("markers", default=False, strip=True).lstrip('"').rstrip('"')]
+        if 'null' in markers:
+            markers = False
+        self.render("context_menu.html", markers=markers)
 
 class DefaultWebSocket(tornado.websocket.WebSocketHandler):
     def initialize(self, callback):
