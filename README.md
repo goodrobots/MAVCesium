@@ -1,5 +1,5 @@
 # MAVCesium - An experimental web based map display for [MAVProxy](https://github.com/Dronecode/MAVProxy) based on [Cesium](https://github.com/AnalyticalGraphicsInc/cesium)
-**[ Click here to see a live demo ](http://www.MAVCesium.io/)**
+**[ Click here to see a live demo ](http://www.MAVCesium.io/)** <-- 26/Sep/2017 Server currently down... Stand by as I get another running :)
 
 *Notes: Your browser will need to support webgl and web sockets. Please view on a desktop machine as the application does not currently support responsive layouts.*
 
