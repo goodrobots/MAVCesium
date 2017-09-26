@@ -7,23 +7,26 @@
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="MAVCesium">
     <meta name="author" content="Samuel Dudley">
-    <link rel='stylesheet' href="/static/DST/css/cesium.css">
-    <link rel="stylesheet" href="/static/DST/css/third_party/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/DST/css/third_party/font-awesome.min.css">
-    <link rel="stylesheet" href="/static/DST/css/third_party/jquery-ui.min.css"/>
-    <link rel="stylesheet" href="/static/DST/css/third_party/lobipanel.css"/>
-    <link rel="icon" href="/static/DST/favicon-32x32.png" sizes="32x32" />
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/cesium.css")}}"/>
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/bootstrap.min.css")}}"/>
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/font-awesome.min.css")}}"/>
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/jquery-ui.min.css")}}"/>
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/lobipanel.css")}}"/>
+    <link rel="icon" href="{{static_url("DST/favicon-32x32.png")}}" sizes="32x32" />
 
     <title>MAVCesium</title>
     
-    <script src="/static/Build/Cesium/Cesium.js"></script>
+    
+    <script src="{{static_url("Build/Cesium/Cesium.js")}}"></script>
+    <link rel="stylesheet" type="text/css" href="{{static_url("Build/Cesium/Widgets/widgets.css")}}"/>
+    
     <script>
-        var bing_api_key = '{{ bing_api_key }}';
-        var websocket = '{{ websocket }}';
+        var bing_api_key = '{{ escape(bing_api_key) }}';
+        var websocket = '{{ escape(websocket) }}';
+        if (!websocket || /null/.test(websocket) || /localhost/.test(websocket) || /0.0.0.0/.test(websocket)) {
+            websocket = ("ws://" + window.location.hostname + ":" + window.location.port + "/websocket/");
+          }
     </script>
-    <style>
-      @import url(/static/Build/Cesium/Widgets/widgets.css);
-    </style>
     
   </head>
 
@@ -49,28 +52,27 @@
 	         </ul>
          </div>
     </nav>
-
     <!-- Begin page content -->
 
     <div class="container" id="cesium_container"></div>
     <div id="contextMenu" class="dropdown clearfix">
-        {% include "context_menu.html" %}
+    	<!-- This div contains the context menu when activated -->
     </div>
-    {% include "settings_menu.html" %}
+    	{% include "settings_menu.html" %}
     
     <canvas id="hud"></canvas>
     
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="/static/DST/js/third_party/jquery-2.2.4.min.js"></script>
-    <script src="/static/DST/js/third_party/bootstrap.min.js"></script>
-    <script src="/static/DST/js/third_party/jquery-ui.min.js"></script>
-    <script src="/static/DST/js/third_party/lobipanel.js"></script>
-	<script src="/static/DST/js/cesium_setup.js"></script>
-	<script src="/static/DST/js/core.js"></script>
-	<script src="/static/DST/js/wp.js"></script>
-	<script src="/static/DST/js/context_menu.js"></script>
-	<script src="/static/DST/js/settings.js"></script>
-	<script src="/static/DST/js/hud.js"></script>
-	<script src="/static/DST/js/websocket.js"></script>
-	</body>
+    <script src="{{ static_url("DST/js/third_party/jquery-2.2.4.min.js")}}" type="text/javascript"></script>
+    <script src="{{ static_url("DST/js/third_party/bootstrap.min.js")}}" type="text/javascript"></script>
+    <script src="{{ static_url("DST/js/third_party/jquery-ui.min.js")}}" type="text/javascript"></script>
+    <script src="{{ static_url("DST/js/third_party/lobipanel.js")}}" type="text/javascript"></script>
+	<script src="{{ static_url("DST/js/cesium_setup.js")}}" type="text/javascript"></script>
+	<script src="{{ static_url("DST/js/core.js")}}" type="text/javascript"></script>
+	<script src="{{ static_url("DST/js/wp.js")}}" type="text/javascript"></script>
+	<script src="{{ static_url("DST/js/context_menu.js")}}" type="text/javascript"></script>
+	<script src="{{ static_url("DST/js/settings.js")}}" type="text/javascript"></script>
+	<script src="{{ static_url("DST/js/hud.js")}}" type="text/javascript"></script>
+	<script src="{{ static_url("DST/js/websocket.js")}}" type="text/javascript"></script>
+  </body>
 </html>

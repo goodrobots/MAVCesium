@@ -1,12 +1,12 @@
 <ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
 	{% if markers %}
         {% for id in markers %}
-            <li><a tabindex="-1" href="#" id = {{ id }}>Set</a></li>
-            <li><a tabindex="-1" href="#" id = {{ id }}>Remove</a></li>
-            <li><a tabindex="-1" href="#" id = {{ id }}>Move</a></li>
-        {% endfor %}
+            <li><a tabindex="-1" href="#" id = {{ escape(id) }}>Set</a></li>
+            <li><a tabindex="-1" href="#" id = {{ escape(id) }}>Remove</a></li>
+            <li><a tabindex="-1" href="#" id = {{ escape(id) }}>Move</a></li>
+        {% end %}
         <li class="divider"></li>
-    {% endif %}
+    {% end %}
 	<li class="dropdown-submenu">
         <a tabindex="-1" href="#">Mission</a>
         <ul class="dropdown-menu">

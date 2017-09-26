@@ -11,51 +11,11 @@ from MAVProxy.modules.lib import mp_settings
 from pymavlink import mavutil
 import threading, Queue
 
-from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
-from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
-from twisted.web.server import Site
-from twisted.web.wsgi import WSGIResource
-from twisted.internet import reactor
-
-from twisted.python import log
-
-from app import cesium_web_server # the Flask webapp
+from app import cesium_web_server # the tornado web server
 
 import webbrowser # open url's in browser window
 
 from app.config import SERVER_INTERFACE, SERVER_PORT, MODULE_DEBUG, APP_DEBUG
-
-class ServerProtocol(WebSocketServerProtocol):
-
-    def onConnect(self, request):
-        if APP_DEBUG:
-            print("Client connecting: {0}".format(request.peer))
-
-    def onOpen(self):
-        if APP_DEBUG:
-            print("WebSocket connection open")
-        self.id = uuid.uuid4()
-        self.factory.data[self.id]=self
-        payload = {'new_connection':self.id}
-        self.factory.message_queue.put(payload)
-
-    def onMessage(self, payload, isBinary):
-        if isBinary:
-            # TODO: handle binary
-            pass
-        else:
-            # It's text based (JSON)
-            payload = json.loads(payload)
-            self.factory.message_queue.put(payload)
-
-    def onClose(self, wasClean, code, reason):
-        if APP_DEBUG:
-            print("WebSocket connection closed: {0}".format(reason))
-        try:
-            del self.factory.data[self.id]
-        except Exception as e:
-            print("An error occurred when attempting to close a websocket: {}".format(e))
-
         
 class CesiumModule(mp_module.MPModule):
 
@@ -68,6 +28,9 @@ class CesiumModule(mp_module.MPModule):
                             'SYS_STATUS', 'MISSION_CURRENT',
                             'STATUSTEXT', 'FENCE_STATUS', 'WIND']
 
+        self.main_counter = 0
+        
+        self.message_queue = Queue.Queue()
         
         self.wp_change_time = 0
         self.fence_change_time = 0
@@ -85,45 +48,24 @@ class CesiumModule(mp_module.MPModule):
         self.mission = {}
         
         self.server_thread = None
-        
-        self.run_server()
+        self.start_server()
         
         if self.cesium_settings.openbrowser:
             self.open_display_in_browser()
-            
-        
-    def run_server(self):
-#         log.startLogging(sys.stdout)
-        
-        # create a Twisted Web resource for our WebSocket server
-        self.factory = WebSocketServerFactory(u"ws://"+SERVER_INTERFACE+":"+SERVER_PORT)
-        self.factory.protocol = ServerProtocol
-        self.factory.setProtocolOptions(maxConnections=100)
-        self.factory.data = {}
-        self.factory.message_queue = Queue.Queue()
-        wsResource = WebSocketResource(self.factory)
-        
-        # create a Twisted Web WSGI resource for our Flask server
-        wsgiResource = WSGIResource(reactor, reactor.getThreadPool(), cesium_web_server.app)
-        
-        # create a root resource serving everything via WSGI/Flask, but
-        # the path "/ws" served by our WebSocket stuff
-        rootResource = WSGIRootResource(wsgiResource, {b'ws': wsResource})
     
-        # create a Twisted Web Site and run everything
-        site = Site(rootResource)
-        reactor.listenTCP(int(SERVER_PORT), site, interface=SERVER_INTERFACE)
-        self.server_thread = threading.Thread(target=reactor.run, args=(False,))
-        self.server_thread.daemon = True
-        self.server_thread.start()
-        
-        self.mpstate.console.writeln('MAVCesium display loaded at http://'+SERVER_INTERFACE+":"+SERVER_PORT+'/', fg='white', bg='blue')
+    def start_server(self):
+        if self.main_counter == 0:
+            self.main_counter += 1
+            self.server_thread = threading.Thread(target=cesium_web_server.main, args = (self,))
+            self.server_thread.daemon = True
+            self.server_thread.start()
+#             log.startLogging(sys.stdout)
+            self.mpstate.console.writeln('MAVCesium display loaded at http://'+SERVER_INTERFACE+":"+SERVER_PORT+'/', fg='white', bg='blue')
+        else:
+            time.sleep(0.1)
         
     def stop_server(self):
-        if self.server_thread is not None:
-            reactor.callFromThread(reactor.stop) # Kill the server talking to the browser
-            while self.server_thread.isAlive():
-                time.sleep(0.01) #TODO: handle this better...
+        cesium_web_server.stop_tornado()
     
     def open_display_in_browser(self):
         if self.web_server_thread.isAlive():
@@ -133,28 +75,27 @@ class CesiumModule(mp_module.MPModule):
                 browser_controller.open_new_tab(url)
             except:
                 webbrowser.open_new_tab(url)
-            
+                
+    def callback(self, data):
+        '''callback for data coming in from a websocket'''
+        self.message_queue.put_nowait(data)
             
     def send_data(self, data, target = None):
-        '''push json data to the browser'''
+        '''push json data to the browser via a websocket'''
         payload = json.dumps(data).encode('utf8')
-        if target is not None:
-            connection = self.factory.data[target]
-            reactor.callFromThread(WebSocketServerProtocol.sendMessage, connection,  payload)
-        else:   
-            for connection in self.factory.data.values():
-                reactor.callFromThread(WebSocketServerProtocol.sendMessage, connection,  payload)
+        cesium_web_server.websocket_send_message(payload)
+        # TODO: direct messages to individual websockets, e.g. new connections
 
     def cmd_cesium(self, args):
         '''cesium command parser'''
-        usage = "usage: cesium <restart> <set> (CESIUMSETTING)"
+        usage = "usage: cesium <restart> <count> <set> (CESIUMSETTING)"
         if len(args) == 0:
             print(usage)
             return
         if args[0] == "set":
             self.cesium_settings.command(args[1:])
         elif args[0] == "count":
-            print('%u connected' % int(len(self.factory.data)))
+            print('%u connected' % int(len(cesium_web_server.live_web_sockets)))
         elif args[0] == "restart":
             self.restart()
         else:
@@ -186,7 +127,7 @@ class CesiumModule(mp_module.MPModule):
         self.fence_points_to_send = self.mpstate.public_modules['fence'].fenceloader.points
         for point in self.fence_points_to_send:
             point_dict = point.to_dict()
-            iidx = point_dict['idx']
+            idx = point_dict['idx']
             del point_dict['idx']
             if idx != 0: # dont include the return location
                 self.fence[idx] = point_dict
@@ -209,8 +150,8 @@ class CesiumModule(mp_module.MPModule):
         
     def restart(self):
         '''restart the web server'''
-        self.stop_web_server() 
-        self.run_web_server()
+        self.stop_server() 
+        self.start_server()
 
     def mavlink_packet(self, m):
         '''handle an incoming mavlink packet'''
@@ -248,23 +189,23 @@ class CesiumModule(mp_module.MPModule):
                 
     def idle_task(self):
         '''called on idle'''
-        while not self.factory.message_queue.empty():
-            payload = self.factory.message_queue.get_nowait()
+        while not self.message_queue.empty():
+            payload = self.message_queue.get_nowait()
             if self.cesium_settings.debug:
                 print payload
-                
+                 
             if 'new_connection' in payload.keys():
                 self.send_defines(target=payload['new_connection'])
                 self.send_fence()
                 self.send_mission()
                 self.send_flightmode()
-            
+             
             elif 'mode_set' in payload.keys():
                 self.mpstate.functions.process_stdin('%s' % (payload['mode_set']))
-            
+             
             elif 'wp_set' in payload.keys():
                 self.mpstate.functions.process_stdin('wp set %u' % int(payload['wp_set']))
-            
+             
             elif 'wp_move' in payload.keys():
                 self.mpstate.functions.process_stdin('wp move %u %f %f' % (
                                                                            int(payload['wp_move']['idx']),
@@ -272,23 +213,23 @@ class CesiumModule(mp_module.MPModule):
                                                                            float(payload['wp_move']['lon'])
                                                                            )
                                                      )
-
+ 
             elif 'wp_remove' in payload.keys():
                 self.mpstate.functions.process_stdin('wp remove %u' % int(payload['wp_remove']))
-            
+             
             elif 'wp_list' in payload.keys():
                 self.mpstate.functions.process_stdin('wp list')
-                
+                 
             elif 'fence_list' in payload.keys():
                 self.mpstate.functions.process_stdin('fence list')
-            
+             
             else:
                 pass
    
     def unload(self):
         '''unload module'''
-        self.stop_server()
-        
+        # override the unload method
+        self.stop_server() 
         
 def init(mpstate):
     '''initialise module'''
