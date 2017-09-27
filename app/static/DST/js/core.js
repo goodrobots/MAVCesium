@@ -47,8 +47,8 @@ $(function () {
     		init_flag: false,
     		alt: 150}
     
-    var forward_view = {value: false}
-    var free_view = {value: true}
+    var forward_view = {value: true}
+    var free_view = {value: false}
     var mount_view = {value: false}
     
     var views = [top_view, forward_view, free_view, mount_view]
