@@ -47,11 +47,11 @@ $(function () {
     		init_flag: false,
     		alt: 150}
     
-    var fpv_view = {value: false}
+    var forward_view = {value: false}
     var free_view = {value: true}
     var mount_view = {value: false}
     
-    var views = [top_view, fpv_view, free_view, mount_view]
+    var views = [top_view, forward_view, free_view, mount_view]
     var hud = {show:true}
 
     var aircraft = {}
@@ -238,7 +238,7 @@ $(function () {
 	        	
 	        }
 	        
-	        if (fpv_view.value){
+	        if (forward_view.value){
 	        	viewer.trackedEntity = undefined
 	        	// 2 Set view with heading, pitch and roll of aircraft
 	        	scene.screenSpaceCameraController.enableRotate = false;
@@ -345,7 +345,7 @@ $(function () {
     }
     
     
-    toggle_fpv_view = function(btn_ref, var_to_toggle) {
+    toggle_forward_view = function(btn_ref, var_to_toggle) {
         update_view_control(var_to_toggle)
         
     }
