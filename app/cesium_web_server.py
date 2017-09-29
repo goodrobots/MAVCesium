@@ -64,7 +64,6 @@ class DefaultWebSocket(tornado.websocket.WebSocketHandler):
 
 class Application(tornado.web.Application):
     def __init__(self, module):
-        print(APP_PREFIX)
         handlers = [
             (r"/"+APP_PREFIX, MainHandler),
             (r"/"+APP_PREFIX+"context/", ContextHandler),
@@ -89,7 +88,7 @@ def start_app(module):
     server = tornado.httpserver.HTTPServer(application)
     server.listen(port = int(SERVER_PORT), address = str(SERVER_INTERFACE))
     if APP_DEBUG:
-        print("Starting Tornado on port {0}".format(SERVER_INTERFACE+":"+SERVER_PORT+"/"))
+        print("Starting Tornado server: {0}".format(SERVER_INTERFACE+":"+SERVER_PORT+"/"+APP_PREFIX))
     return server
 
 def close_all_websockets():
