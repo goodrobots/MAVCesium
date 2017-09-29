@@ -23,8 +23,9 @@
     <script>
         var bing_api_key = '{{ escape(bing_api_key) }}';
         var websocket = '{{ escape(websocket) }}';
+        var app_prefix = '{{ escape(app_prefix) }}';
         if (!websocket || /null/.test(websocket) || /localhost/.test(websocket) || /0.0.0.0/.test(websocket)) {
-            websocket = ("ws://" + window.location.hostname + ":" + window.location.port + "/websocket/");
+            websocket = ("ws://" + window.location.hostname + ":" + window.location.port + "/" + app_prefix + "websocket/");
           }
     </script>
     

@@ -15,7 +15,7 @@ from app import cesium_web_server # the tornado web server
 
 import webbrowser # open url's in browser window
 
-from app.config import SERVER_INTERFACE, SERVER_PORT, MODULE_DEBUG, APP_DEBUG
+from app.config import SERVER_INTERFACE, SERVER_PORT, MODULE_DEBUG, APP_DEBUG, APP_PREFIX
         
 class CesiumModule(mp_module.MPModule):
 
@@ -60,7 +60,7 @@ class CesiumModule(mp_module.MPModule):
             self.server_thread.daemon = True
             self.server_thread.start()
 #             log.startLogging(sys.stdout)
-            self.mpstate.console.writeln('MAVCesium display loaded at http://'+SERVER_INTERFACE+":"+SERVER_PORT+'/', fg='white', bg='blue')
+            self.mpstate.console.writeln('MAVCesium display loaded at http://'+SERVER_INTERFACE+":"+SERVER_PORT+'/'+APP_PREFIX, fg='white', bg='blue')
         else:
             time.sleep(0.1)
         
@@ -69,7 +69,7 @@ class CesiumModule(mp_module.MPModule):
     
     def open_display_in_browser(self):
         if self.web_server_thread.isAlive():
-            url = 'http://'+SERVER_INTERFACE+":"+SERVER_PORT+'/'
+            url = 'http://'+SERVER_INTERFACE+":"+SERVER_PORT+'/'+APP_PREFIX
             try:
                 browser_controller = webbrowser.get('google-chrome')
                 browser_controller.open_new_tab(url)

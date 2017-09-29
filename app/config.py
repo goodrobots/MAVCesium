@@ -35,17 +35,21 @@ for _conf_file_path in _conf_file_paths:
         try:
             # load the config
             _conf.read_file(open(_conf_file_path))
+            
+            APP_PREFIX = str(_conf.get('general', 'app_prefix'))
+            if APP_PREFIX == "''":
+                APP_PREFIX = ""
     
             SERVER_INTERFACE = _conf.get('general', 'server_interface')
             SERVER_PORT = _conf.get('general', 'server_port')
-            WEBSOCKET = str("ws://" + _conf.get('general', 'websocket_interface') + ":" + _conf.get('general', 'websocket_port') + "/websocket/")
+            WEBSOCKET = str("ws://" + _conf.get('general', 'websocket_interface') + ":" + _conf.get('general', 'websocket_port') +
+                            "/" + APP_PREFIX + "websocket/")
             
             BING_API_KEY = _conf.get('api_keys', 'bing')
 
-            APP_SECRET_KEY = _conf.get('general', 'app_secret_key')
-            if APP_SECRET_KEY == '':
+            APP_SECRET_KEY = str(_conf.get('general', 'app_secret_key'))
+            if APP_SECRET_KEY == "''":
                 APP_SECRET_KEY = str(uuid.uuid4())
-                
             APP_DEBUG = parse_bool(_conf.get('debug', 'app_debug'))
             MODULE_DEBUG = parse_bool(_conf.get('debug', 'module_debug'))
             

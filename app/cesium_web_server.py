@@ -10,7 +10,7 @@ import tornado.websocket
 import tornado.httpserver
 import logging
 
-from config import SERVER_INTERFACE, SERVER_PORT, APP_SECRET_KEY, WEBSOCKET, BING_API_KEY, APP_DEBUG
+from config import SERVER_INTERFACE, SERVER_PORT, APP_SECRET_KEY, WEBSOCKET, BING_API_KEY, APP_DEBUG, APP_PREFIX
                 
 import os, json
 
@@ -28,7 +28,7 @@ except: # otherwise fall back to the standard file system
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("index.html", bing_api_key=BING_API_KEY, websocket=WEBSOCKET, markers=False)
+        self.render("index.html", bing_api_key=BING_API_KEY, websocket=WEBSOCKET, markers=False, app_prefix = APP_PREFIX)
         
 class ContextHandler(tornado.web.RequestHandler):
     def post(self):
@@ -64,15 +64,16 @@ class DefaultWebSocket(tornado.websocket.WebSocketHandler):
 
 class Application(tornado.web.Application):
     def __init__(self, module):
+        print(APP_PREFIX)
         handlers = [
-            (r"/", MainHandler),
-            (r"/context/", ContextHandler),
+            (r"/"+APP_PREFIX, MainHandler),
+            (r"/"+APP_PREFIX+"context/", ContextHandler),
         ]
         if module:
             cb = dict(callback=module.callback)
         else:
             cb = dict(callback=None)
-        handlers.append((r"/websocket/", DefaultWebSocket, cb))
+        handlers.append((r"/"+APP_PREFIX+"websocket/", DefaultWebSocket, cb))
 
         settings = dict(
             cookie_secret=APP_SECRET_KEY,
@@ -88,7 +89,7 @@ def start_app(module):
     server = tornado.httpserver.HTTPServer(application)
     server.listen(port = int(SERVER_PORT), address = str(SERVER_INTERFACE))
     if APP_DEBUG:
-        print("Starting Tornado on port {0}".format(SERVER_INTERFACE+":"+SERVER_PORT))
+        print("Starting Tornado on port {0}".format(SERVER_INTERFACE+":"+SERVER_PORT+"/"))
     return server
 
 def close_all_websockets():

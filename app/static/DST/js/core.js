@@ -652,13 +652,13 @@ right_click_handler.setInputAction(function(event){
 
 	if (selected.marker != null) {
 		console.log('Single right-click on marker');
-		$.post("/context/", {markers: JSON.stringify(selected.marker.id)}, function(data){
+		$.post("/" + app_prefix + "context/", {markers: JSON.stringify(selected.marker.id)}, function(data){
 			$('#contextMenu').html(data);
 			console.log(data)
 		})
 	} else { 
 		console.log('Single right-click NOT on marker');
-			$.post("/context/", {markers: JSON.stringify(null)} , function(data){
+			$.post("/" + app_prefix + "context/", {markers: JSON.stringify(null)} , function(data){
 			$('#contextMenu').html(data);
 			console.log(data)
 		})
