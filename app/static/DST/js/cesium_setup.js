@@ -1,7 +1,7 @@
 var display_time_milis = Date.now();
 
 var date = new Date();
-var dynamic_lighting = {value: true}
+var dynamic_lighting = {value: false}
 var terrain_shadows = {value: false}
 var entity_shadows = {value: false}
 
