@@ -2,3 +2,4 @@
 *.~
 .project
 .pydevproject
+app/mavcesium_default.ini
