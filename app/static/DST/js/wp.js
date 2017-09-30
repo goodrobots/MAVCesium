@@ -42,7 +42,7 @@ function create_wp(id, wp_data){
         markers.add({
             id : id,
             position : Cesium.Cartesian3.fromDegrees(wp_data.y, wp_data.x, wp_data.z+height_offset),
-            image : '/static/DST/wp_icons/blu-blank.png',
+            image : '/'+app_prefix+'static/DST/wp_icons/blu-blank.png',
             verticalOrigin : Cesium.VerticalOrigin.BOTTOM,
             horizontalOrigin : Cesium.HorizontalOrigin.CENTER
         });

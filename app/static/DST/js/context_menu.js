@@ -88,7 +88,7 @@ $contextMenu.on("mouseover", "a", function(evt){
     if (marker != null){
     	selected.marker = marker
     	document.getElementsByTagName("body")[0].style.cursor = "pointer" // change the pointer to a hand
-		selected.marker.image= '/static/DST/wp_icons/ylw-blank.png'
+		selected.marker.image= '/'+app_prefix+'static/DST/wp_icons/ylw-blank.png'
 		selected.alt_line = get_by_id(alt_lines, selected.marker.id)
 		
     } else{

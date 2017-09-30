@@ -7,7 +7,7 @@ $(function () {
     var vehicle_offset_x = 25
     var vehicle_offset_y = 25
     var vehicle_offset_z = 25
-    var vehicle_model = '/static/DST/models/rat.gltf'
+    var vehicle_model = '/'+app_prefix+'static/DST/models/rat.gltf'
     
     var position = Cesium.Cartesian3.fromDegrees(0, 0, 0);
     var heading = 0;
@@ -420,7 +420,7 @@ $(function () {
     function clear_selected_marker(){
     	if (selected.marker != null){
             document.getElementsByTagName("body")[0].style.cursor = "default"
-            selected.marker.image = '/static/DST/wp_icons/blu-blank.png' // re-set the wp icon to be unselected...
+            selected.marker.image = '/'+app_prefix+'static/DST/wp_icons/blu-blank.png' // re-set the wp icon to be unselected...
             selected.marker = null
             selected.alt_line = null
         }
@@ -472,8 +472,8 @@ $(function () {
     	
     	
     	if (selected.marker != null && selected.dragging) {
-    		selected.marker.image= '/static/DST/wp_icons/ylw-blank.png' // make / keep the marker yellow
-    		document.getElementsByTagName("body")[0].style.cursor = "url(/static/DST/pointers/move.png), pointer"
+    		selected.marker.image= '/'+app_prefix+'static/DST/wp_icons/ylw-blank.png' // make / keep the marker yellow
+    		document.getElementsByTagName("body")[0].style.cursor = "url('/'+app_prefix+'static/DST/pointers/move.png), pointer"
     		
     		if (!selected.camera_stored){
     			  store_camera() // store the current camera until after release
@@ -544,7 +544,7 @@ $(function () {
         	if (selected.marker != null && !selected.dragging){ // this is the only point where we select the wp
         		// we dont select if we are dragging otherwise we can move wp's accidentally when panning the camera...
         		document.getElementsByTagName("body")[0].style.cursor = "pointer" // change the pointer to a hand
-        		selected.marker.image= '/static/DST/wp_icons/ylw-blank.png'
+        		selected.marker.image= '/'+app_prefix+'static/DST/wp_icons/ylw-blank.png'
         		selected.alt_line = get_by_id(alt_lines, selected.marker.id) //
         		selected.label = get_by_id(labels, selected.marker.id)
         	} else { // we have not picked a wp
