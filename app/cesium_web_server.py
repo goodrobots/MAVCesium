@@ -75,10 +75,11 @@ class Application(tornado.web.Application):
         handlers.append((r"/"+APP_PREFIX+"websocket/", DefaultWebSocket, cb))
 
         settings = dict(
-            cookie_secret=APP_SECRET_KEY,
-            template_path=APP_TEMPLATES,
-            static_path=APP_STATIC,
-            xsrf_cookies=False,
+            cookie_secret = APP_SECRET_KEY,
+            template_path = APP_TEMPLATES,
+            static_path = APP_STATIC,
+            static_url_prefix = "/"+APP_PREFIX+"static/",
+            xsrf_cookies = False,
         )
         super(Application, self).__init__(handlers, **settings)
 
