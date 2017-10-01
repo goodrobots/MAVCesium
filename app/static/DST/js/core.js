@@ -1,8 +1,10 @@
 var $contextMenu = $("#contextMenu");
 
-$(function () {
-	  $('[data-toggle="tooltip"]').tooltip()
+$(function () { // init tool tips and only show on hover
+	$('[data-toggle="tooltip"]').tooltip({
+		trigger : 'hover'
 	})
+})
 
     var vehicle_offset_x = 25
     var vehicle_offset_y = 25
@@ -451,25 +453,18 @@ $(function () {
 	        var longitudeString = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6); // can use these values in the UI
 	        var latitudeString = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
 	        var heightString = cartographic.height.toFixed(1)
-	        document.getElementById('cursor_location').innerHTML = 'Cursor: '+latitudeString+' '+longitudeString+' '+heightString+'m';
+	        document.getElementById('cursor_location').innerHTML = 'Cursor: <small>'+latitudeString+' '+longitudeString+' '+heightString+'m</small>&nbsp';
 	    }
     	
-	        
-	        
     	//console.log(selected.dragging)
     	var pickedObjects = scene.drillPick(movement.endPosition);
     	var pickedObject = undefined
-    	
-    	
     	
     	if (pickedObjects.length  == 1){
             pickedObject = pickedObjects[0]
         } else if (pickedObjects.length  > 1){
         	// TODO handle many objects
         }
-    	
-    	
-    	
     	
     	if (selected.marker != null && selected.dragging) {
     		selected.marker.image= '/'+app_prefix+'static/DST/wp_icons/ylw-blank.png' // make / keep the marker yellow
@@ -583,10 +578,10 @@ $(function () {
 	        var heightString = ray_cartographic.height.toFixed(1)
 	        
 	        //update the UI click text
-	        document.getElementById('cursor_click').innerHTML = 'Click: '+latitudeString+' '+longitudeString+' '+heightString+'m';
+	        document.getElementById('cursor_click').innerHTML = 'Click: <small>'+latitudeString+' '+longitudeString+' '+heightString+'m</small>&nbsp';
 	        if (last_click) {
 	        	var geo_sep = new Cesium.EllipsoidGeodesic(last_click, ray_cartographic)
-	        	document.getElementById('cursor_click').innerHTML += ' Distance: '+geo_sep.surfaceDistance.toFixed(1)+'m Bearing: '+ Cesium.Math.toDegrees(Cesium.Math.zeroToTwoPi(geo_sep.startHeading)).toFixed(1);
+	        	document.getElementById('click_distance').innerHTML = '<small>(Distance: '+geo_sep.surfaceDistance.toFixed(1)+'m Bearing: '+ Cesium.Math.toDegrees(Cesium.Math.zeroToTwoPi(geo_sep.startHeading)).toFixed(1)+')</small>';
 	        }
 	        last_click = ray_cartographic
     	}
