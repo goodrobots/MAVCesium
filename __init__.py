@@ -19,10 +19,9 @@ from app.config import SERVER_INTERFACE, SERVER_PORT, MODULE_DEBUG, APP_DEBUG, A
         
 class CesiumModule(mp_module.MPModule):
 
-    def __init__(self, mpstate):
+    def __init__(self, mpstate, **kwargs):
         super(CesiumModule, self).__init__(mpstate, "cesium", "Cesium map module", public = True)
         self.add_command('cesium', self.cmd_cesium, [""])
-        
         self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD',
                             'ATTITUDE', 'GLOBAL_POSITION_INT',
                             'SYS_STATUS', 'MISSION_CURRENT',
@@ -231,9 +230,9 @@ class CesiumModule(mp_module.MPModule):
         # override the unload method
         self.stop_server() 
         
-def init(mpstate):
+def init(mpstate, **kwargs):
     '''initialise module'''
-    return CesiumModule(mpstate)
+    return CesiumModule(mpstate, **kwargs)
 
 
 
