@@ -40,6 +40,9 @@ class ContextHandler(tornado.web.RequestHandler):
 class DefaultWebSocket(tornado.websocket.WebSocketHandler):
     def initialize(self, callback):
         self.callback = callback
+    
+    def check_origin(self, origin):
+        return True
         
     def open(self):
         if APP_DEBUG:
