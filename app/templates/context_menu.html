@@ -1,28 +1,28 @@
 <ul class="dropdown-menu multi-level" role="menu" aria-labelledby="dropdownMenu" style="display:block;position:static;margin-bottom:5px;">
 	{% if markers %}
         {% for id in markers %}
-            <li><a tabindex="-1" href="#" id = {{ escape(id) }}>Set</a></li>
-            <li><a tabindex="-1" href="#" id = {{ escape(id) }}>Remove</a></li>
-            <li><a tabindex="-1" href="#" id = {{ escape(id) }}>Move</a></li>
+            <li><a class="dropdown-item" tabindex="-1" href="#" id = {{ escape(id) }}>Set</a></li>
+            <li><a class="dropdown-item" tabindex="-1" href="#" id = {{ escape(id) }}>Remove</a></li>
+            <li><a class="dropdown-item" tabindex="-1" href="#" id = {{ escape(id) }}>Move</a></li>
         {% end %}
-        <li class="divider"></li>
+        <li class="dropdown-divider"></li>
     {% end %}
 	<li class="dropdown-submenu">
-        <a tabindex="-1" href="#">Mission</a>
+        <a class="dropdown-item" tabindex="-1" href="#">Mission</a>
         <ul class="dropdown-menu">
-	        <li><a id ="mission-clear" href="#">Clear</a></li>
-	        <li><a id ="mission-list" href="#">List</a></li>
-	        <li><a id ="mission-load" href="#">Load</a></li>
+	        <li><a class="dropdown-item" id ="mission-clear" href="#">Clear</a></li>
+	        <li><a class="dropdown-item" id ="mission-list" href="#">List</a></li>
+	        <li><a class="dropdown-item" id ="mission-load" href="#">Load</a></li>
         </ul>
     </li>
     <li class="dropdown-submenu">
-        <a tabindex="-1" href="#">Fence</a>
+        <a class="dropdown-item" tabindex="-1" href="#">Fence</a>
         <ul class="dropdown-menu">
-            <li><a id ="fence-clear" href="#">Clear</a></li>
-            <li><a id ="fence-list" href="#">List</a></li>
-            <li><a id ="fence-load" href="#">Load</a></li>
+            <li><a class="dropdown-item" id ="fence-clear" href="#">Clear</a></li>
+            <li><a class="dropdown-item" id ="fence-list" href="#">List</a></li>
+            <li><a class="dropdown-item" id ="fence-load" href="#">Load</a></li>
         </ul>
     </li>
-    <li class="divider"></li>
-    <li><a tabindex="-1" href="#">Show Landing Zone</a></li>
+    <li class="dropdown-divider"></li>
+    <li><a class="dropdown-item" tabindex="-1" href="#">Show Landing Zone</a></li>
 </ul>
