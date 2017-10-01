@@ -7,18 +7,8 @@
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="MAVCesium">
     <meta name="author" content="Samuel Dudley">
-    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/cesium.css")}}"/>
-    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/bootstrap.min.css")}}"/>
-    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/font-awesome.min.css")}}"/>
-    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/jquery-ui.min.css")}}"/>
-    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/lobipanel.css")}}"/>
-    <link rel="icon" href="{{static_url("DST/favicon-32x32.png")}}" sizes="32x32" />
-
+    <meta name="license" content="GPL-3.0">
     <title>MAVCesium</title>
-    
-    
-    <script src="{{static_url("Build/Cesium/Cesium.js")}}"></script>
-    <link rel="stylesheet" type="text/css" href="{{static_url("Build/Cesium/Widgets/widgets.css")}}"/>
     
     <script>
         var bing_api_key = '{{ escape(bing_api_key) }}';
@@ -29,33 +19,56 @@
           }
     </script>
     
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/cesium.css")}}"/>
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/bootstrap.min.css")}}"/>
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/font-awesome.min.css")}}"/>
+    <link rel="stylesheet" type="text/css" href="{{static_url("DST/css/third_party/tether.min.css")}}"/>
+    <link rel="stylesheet" type="text/css" href="{{static_url("Build/Cesium/Widgets/widgets.css")}}"/>
+    <link rel="icon" href="{{static_url("DST/favicon-32x32.png")}}" sizes="32x32" />
+    
+    <script src="{{static_url("Build/Cesium/Cesium.js")}}" type="text/javascript"></script>
   </head>
 
   <body>
     <!-- Fixed navbar -->
-    <nav class="navbar navbar-default navbar-fixed-top">
-	    <div class="nav navbar-nav navbar-left">
-	        <p class = "navbar-text" id = 'cursor_location'></p>
-	        <p class = "navbar-text" id = 'cursor_click'></p>
-	    </div>
-        <div class="nav navbar-nav navbar-right">
-	        <ul class="nav navbar-nav">
-		        <li class="dropdown">
-		          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Camera<span class="caret"></span></a>
-		          <ul class="dropdown-menu">
-		            <li onclick="toggle_free_view(this, free_view)" id="free"><a href="#">Free</a></li>
-		            <li onclick="toggle_top_view(this, top_view)" id="top"><a href="#">Top Down</a></li>
-		            <li onclick="toggle_forward_view(this, forward_view)" id="fpv"><a href="#">Forward</a></li>
-		            <li onclick="toggle_mount_view(this, mount_view)" id="mount"><a href="#">Mount</a></li>
-		          </ul>
-		        </li>
-		        <li class='active' onclick="toggle_track_vehicle(this, track_vehicle)" id="track_vehicle"><a href="#" data-toggle="tooltip" data-placement="bottom" title="Track Vehicle"><i class="fa fa-crosshairs fa-lg" aria-hidden="true"></i></a></li>
-	            <li data-toggle="modal" data-target=".bd-example-modal-lg"><a href="#" data-toggle="tooltip" data-placement="bottom" title="Settings"><i class="fa fa-cogs fa-lg" aria-hidden="true"></i></a></li>
-	         </ul>
-         </div>
-    </nav>
-    <!-- Begin page content -->
+    <nav class="navbar navbar-toggleable-md navbar-light bg-faded fixed-top">
+	    <ul class="navbar-nav mr-auto">
+      		<li class="nav-item">
+        		<a class="navbar-text" id = 'cursor_location'></a>
+      		</li>
+      		<li class="nav-item">
+        		<a class="navbar-text" id = 'cursor_click'></a>
+      		</li>
+      		<li class="nav-item">
+        		<a class="navbar-text" id = 'click_distance'></a>
+      		</li>
 
+	    </ul>
+        <ul class="navbar-nav">
+	        <li class="dropdown">
+	          <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Camera<span class="caret"></span></a>
+	          <ul class="dropdown-menu">
+	            <li onclick="toggle_free_view(this, free_view)" id="free"><a class="dropdown-item" href="#">Free</a></li>
+	            <li onclick="toggle_top_view(this, top_view)" id="top"><a class="dropdown-item" href="#">Top Down</a></li>
+	            <li onclick="toggle_forward_view(this, forward_view)" id="forward"><a class="dropdown-item" href="#">Forward</a></li>
+	            <li onclick="toggle_mount_view(this, mount_view)" id="mount"><a class="dropdown-item" href="#">Mount</a></li>
+	          </ul>
+	        </li>
+	        
+	        <li class='active' onclick="toggle_track_vehicle(this, track_vehicle)" id="track_vehicle">
+	        	<a class="navbar-text" href="#" data-toggle="tooltip" data-placement="bottom" title="Track Vehicle">
+	        		&nbsp<i class="fa fa-crosshairs fa-lg" aria-hidden="true"></i>&nbsp
+	        	</a>
+	        </li>
+            <li data-toggle="modal" data-target=".bd-example-modal-lg">
+	            <a class="navbar-text" href="#" data-toggle="tooltip" data-placement="bottom" title="Settings">
+	            	&nbsp<i class="fa fa-cogs fa-lg" aria-hidden="true"></i>&nbsp
+	            </a>
+            </li>
+         </ul>
+    </nav>
+    
+    <!-- Begin page content -->
     <div class="container" id="cesium_container"></div>
     <div id="contextMenu" class="dropdown clearfix">
     	<!-- This div contains the context menu when activated -->
@@ -65,10 +78,9 @@
     <canvas id="hud"></canvas>
     
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="{{ static_url("DST/js/third_party/jquery-2.2.4.min.js")}}" type="text/javascript"></script>
+    <script src="{{ static_url("DST/js/third_party/tether.min.js")}}" type="text/javascript"></script>
+    <script src="{{ static_url("DST/js/third_party/jquery-3.2.1.min.js")}}" type="text/javascript"></script>
     <script src="{{ static_url("DST/js/third_party/bootstrap.min.js")}}" type="text/javascript"></script>
-    <script src="{{ static_url("DST/js/third_party/jquery-ui.min.js")}}" type="text/javascript"></script>
-    <script src="{{ static_url("DST/js/third_party/lobipanel.js")}}" type="text/javascript"></script>
 	<script src="{{ static_url("DST/js/cesium_setup.js")}}" type="text/javascript"></script>
 	<script src="{{ static_url("DST/js/core.js")}}" type="text/javascript"></script>
 	<script src="{{ static_url("DST/js/wp.js")}}" type="text/javascript"></script>
