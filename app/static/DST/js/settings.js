@@ -35,24 +35,3 @@ $('#hud_width').on('click', function(event) {
 	resize_hud()
 });
 
-$(function(){
-    $('.panel').lobiPanel({
-
-    	    unpin: {
-    	        icon: 'fa fa-arrows'
-    	    },
-    	    minimize: {
-    	        icon: 'fa fa-chevron-up',
-    	        icon2: 'fa fa-chevron-down'
-    	    },
-    	        reload: false,
-    	        close: false,
-    	        editTitle: false,
-    	        expand: false,
-    	        minWidth: 300,
-    	        minHeight: 300,
-    	        maxWidth: 600,
-    	        maxHeight: 480
-	    });
-});
-
