@@ -45,45 +45,64 @@ $(function () { // init tool tips and only show on hover
     
     var playback = {value: false}
     
-    var top_view = {value: false,
+    var top_view = {value: true,
     		init_flag: false,
-    		alt: 150}
+    		alt: 1000}
     
-    var forward_view = {value: true}
+    var forward_view = {value: false}
     var free_view = {value: false}
     var mount_view = {value: false}
     
-    var views = [top_view, forward_view, free_view, mount_view]
-    var hud = {show:true}
+    var default_camera_settings = {
+    		fov: viewer.camera.frustum.fov,
+    		aspect_ratio: viewer.camera.frustum.aspectRatio
+    }
+    
+    var mount_camera_settings = {
+    		fov: 122.6,
+    		aspect_ratio: 122.6/94.4,
+    		yaw: 0,
+    		pitch: -90.,
+    		roll: 0
+    }
+    
+    var views = [top_view, forward_view, free_view, mount_view];
+    var hud = {show:true};
 
-    var aircraft = {}
-    var pos_target = {lat:null, lon:null, alt_wgs84:null, show:true, color:Cesium.Color.FUCHSIA}
-    var fence = {points:[], show:true, alt_agl:500, color:Cesium.Color.GREEN}
-    var home_alt_wgs84 = undefined
-    var data_stream = {}
-    var flightmode = null
+    var aircraft = {};
+    var pos_target = {lat:null, lon:null, alt_wgs84:null, show:true, color:Cesium.Color.FUCHSIA};
+    var fence = {points:[], show:true, alt_agl:500, color:Cesium.Color.GREEN};
+    var home_alt_wgs84 = undefined;
+    var data_stream = {};
+    var flightmode = null;
+    
+    var terrain_sample_height;
+    
+    var pos_target_lines = scene.primitives.add(new Cesium.PolylineCollection);
+    var sensor_lines = scene.primitives.add(new Cesium.PolylineCollection);
+    var sensor_footprint = undefined;
     
     function update_data_stream(mav_data){
     	if (mav_data.mavpackettype){
-    		data_stream[mav_data.mavpackettype]=mav_data
+    		data_stream[mav_data.mavpackettype] = mav_data;
     		if (mav_data.mavpackettype == 'ATTITUDE' || mav_data.mavpackettype == 'GLOBAL_POSITION_INT') {
-    			update_aircraft_data()
+    			update_aircraft_data();
     		}
     	}
     }
     
     function update_flightmode(flightmode_data){
-    	flightmode = flightmode_data
+    	flightmode = flightmode_data;
     }
     
     function update_defines(defines_data) {
-    	defines = defines_data
+    	defines = defines_data;
     }
     
     function update_fence_data(fence_data) {
         console.log(fence_data)
         
-        fence.points = []
+        fence.points = [];
         
         
         for (var point in fence_data){
@@ -98,7 +117,7 @@ $(function () { // init tool tips and only show on hover
 				  	});
 				  	fence.points.push(fence_data[point].lng, fence_data[point].lat, fence.alt_agl+terrain_sample_height); //[ lon, lat, alt, lon, lat, alt, etc. ]
 				  
-				  draw_fence()
+				  draw_fence();
         	}
         };
     }
@@ -140,7 +159,7 @@ $(function () { // init tool tips and only show on hover
         }
     };
 
-    var terrain_sample_height
+    
 
     function update_aircraft_data() {
     	if (data_stream.ATTITUDE && data_stream.GLOBAL_POSITION_INT) {
@@ -160,29 +179,13 @@ $(function () { // init tool tips and only show on hover
 		    entity.position = aircraft.position;
 		    entity.orientation = aircraft.orientation;
 	        
-	        draw_pos_target()
+	        draw_pos_target();
 	        
-	        if (track_vehicle.value){
-	        	scene.screenSpaceCameraController.enableRotate = true;
-                scene.screenSpaceCameraController.enableTranslate = false;
-                scene.screenSpaceCameraController.enableZoom = true;
-                scene.screenSpaceCameraController.enableTilt = true;
-                scene.screenSpaceCameraController.enableLook = false;
-	        	viewer.trackedEntity = entity;
-	        }
-	        
-	        if (!track_vehicle.value){
-	        	viewer.trackedEntity = undefined
-	        	scene.screenSpaceCameraController.enableRotate = true;
-                scene.screenSpaceCameraController.enableTranslate = true;
-                scene.screenSpaceCameraController.enableZoom = true;
-                scene.screenSpaceCameraController.enableTilt = true;
-                scene.screenSpaceCameraController.enableLook = true;
-	        }
+	        draw_sensor_bounds();
 	        
 	        if (top_view.value){
 	        	
-	        	viewer.trackedEntity = undefined
+	        	viewer.trackedEntity = undefined;
 	        	
 	        	if (top_view.init_flag){ //if this is the first time the top_view has been called since pushing the button
 	                // 2 Set view with heading, pitch and roll
@@ -217,11 +220,8 @@ $(function () { // init tool tips and only show on hover
                         pitch : -Cesium.Math.PI_OVER_TWO,
                         roll : 0.0
                           });
-	        	
-
-	        	    
-	        	}
-	        	else{
+	        		
+	        	} else {
 	        		// disable the default event handlers but allow panning and zooming
 	        		scene.screenSpaceCameraController.enableRotate = true;
 	                scene.screenSpaceCameraController.enableTranslate = true;
@@ -238,9 +238,10 @@ $(function () { // init tool tips and only show on hover
 	        		
 	        	}
 	        	
-	        }
-	        
-	        if (forward_view.value){
+	        	viewer.camera.frustum.fov = default_camera_settings.fov; // this works
+                viewer.camera.frustum.aspectRatio = default_camera_settings.aspect_ratio; // this works
+	        	
+	        } else if (forward_view.value) {
 	        	viewer.trackedEntity = undefined
 	        	// 2 Set view with heading, pitch and roll of aircraft
 	        	scene.screenSpaceCameraController.enableRotate = false;
@@ -249,24 +250,8 @@ $(function () { // init tool tips and only show on hover
                 scene.screenSpaceCameraController.enableTilt = false;
                 scene.screenSpaceCameraController.enableLook = false;
                 
-                viewer.camera.setView({
-	        	    destination : aircraft.position,
-	        	    orientation: {
-	        	        heading : aircraft.yaw,
-	        	        pitch : aircraft.pitch,
-	        	        roll : aircraft.roll
-	        	    }
-	        	});
-	        }
-	        
-	        if (mount_view.value){
-	        	viewer.trackedEntity = undefined
-	        	// 3 Set view with heading, pitch and roll of mount (attached to aircraft)
-	        	scene.screenSpaceCameraController.enableRotate = false;
-                scene.screenSpaceCameraController.enableTranslate = false;
-                scene.screenSpaceCameraController.enableZoom = false;
-                scene.screenSpaceCameraController.enableTilt = false;
-                scene.screenSpaceCameraController.enableLook = false;
+                viewer.camera.frustum.fov = default_camera_settings.fov; // this works
+                viewer.camera.frustum.aspectRatio = default_camera_settings.aspect_ratio; // this works
                 
                 viewer.camera.setView({
 	        	    destination : aircraft.position,
@@ -276,13 +261,72 @@ $(function () { // init tool tips and only show on hover
 	        	        roll : aircraft.roll
 	        	    }
 	        	});
+	        } else if (mount_view.value){
+	        	viewer.trackedEntity = undefined
+	        	// 3 Set view with heading, pitch and roll of mount (attached to aircraft)
+	        	scene.screenSpaceCameraController.enableRotate = false;
+                scene.screenSpaceCameraController.enableTranslate = false;
+                scene.screenSpaceCameraController.enableZoom = false;
+                scene.screenSpaceCameraController.enableTilt = false;
+                scene.screenSpaceCameraController.enableLook = false;
+                
+                
+            	var hpr = new Cesium.HeadingPitchRoll(aircraft.yaw-Math.PI/2, aircraft.pitch, aircraft.roll);
+            	
+            	var hpr_mount = new Cesium.HeadingPitchRoll(0, -Math.PI/2, 0); // this is the actual mount offset
+            	
+            	var vehicleQuat = new Cesium.Quaternion
+            	var mountQuat = new Cesium.Quaternion
+            	var vehiclePos = aircraft.position
+            	vehicleQuat = Cesium.Transforms.headingPitchRollQuaternion(vehiclePos, hpr)
+            	mountQuat = Cesium.Quaternion.fromHeadingPitchRoll(hpr_mount)
+            	Cesium.Quaternion.multiply(vehicleQuat, mountQuat, vehicleQuat)
+            	var camRot = Cesium.Matrix3.fromQuaternion(vehicleQuat);            	
+
+				var lookDir = new Cesium.Cartesian3(1, 0, 0);
+				
+				var upDir = new Cesium.Cartesian3(0.0, 0, 1);
+                
+                // transform look dir to globe frame
+                Cesium.Matrix3.multiplyByVector(camRot, lookDir, lookDir);
+                Cesium.Matrix3.multiplyByVector(camRot, upDir, upDir);
+
+                viewer.camera.frustum.fov = Cesium.Math.toRadians(mount_camera_settings.fov); // this works
+                viewer.camera.frustum.aspectRatio = mount_camera_settings.aspect_ratio; // this works
+                console.log(Cesium.Math.toDegrees(viewer.camera.frustum.fov), Cesium.Math.toDegrees(viewer.camera.frustum.fovy));
+                
+                viewer.camera.setView({
+	        	    destination : aircraft.position,
+	        	    orientation : {
+				        direction : lookDir,
+				        up : upDir
+	        	    }
+	        	});
+	        } else { // free_view
+	        	
+		        if (track_vehicle.value){
+		        	scene.screenSpaceCameraController.enableRotate = true;
+	                scene.screenSpaceCameraController.enableTranslate = false;
+	                scene.screenSpaceCameraController.enableZoom = true;
+	                scene.screenSpaceCameraController.enableTilt = true;
+	                scene.screenSpaceCameraController.enableLook = false;
+		        	viewer.trackedEntity = entity;
+		        } else {
+		        	viewer.trackedEntity = undefined
+		        	scene.screenSpaceCameraController.enableRotate = true;
+	                scene.screenSpaceCameraController.enableTranslate = true;
+	                scene.screenSpaceCameraController.enableZoom = true;
+	                scene.screenSpaceCameraController.enableTilt = true;
+	                scene.screenSpaceCameraController.enableLook = true;
+		        }
+		        
+		        viewer.camera.frustum.fov = default_camera_settings.fov; // this works
+                viewer.camera.frustum.aspectRatio = default_camera_settings.aspect_ratio; // this works
 	        }
-    	}
-	        
-        
+    	} 
     };
     
-    var pos_target_lines = scene.primitives.add(new Cesium.PolylineCollection)
+
     
     function update_pos_target_data(pos_target_data){
     	pos_target.lon = pos_target_data.lon*Math.pow(10.0, -7)
@@ -308,11 +352,130 @@ $(function () { // init tool tips and only show on hover
         })
     		
     }
-
-    	
-
-    	
     
+    function draw_sensor_bounds(){
+    	
+    	var hpr = new Cesium.HeadingPitchRoll(aircraft.yaw-Math.PI/2, aircraft.pitch, aircraft.roll);
+    	
+    	var hpr_mount1 = new Cesium.HeadingPitchRoll(0, -Math.PI/2, 0); // rotation to correct axis to image
+    	var hpr_mount2 = new Cesium.HeadingPitchRoll(0, 0, -Math.PI/2);
+    	
+    	var hpr_mount3 = new Cesium.HeadingPitchRoll(0, -Math.PI/2, 0); // this is the actual mount offset
+    	
+    	var vehicleQuat = new Cesium.Quaternion
+    	var mountQuat = new Cesium.Quaternion
+    	var mountQuat1 = new Cesium.Quaternion
+    	var mountQuat2 = new Cesium.Quaternion
+    	var mountQuat3 = new Cesium.Quaternion
+    	var vehiclePos = aircraft.position
+    	vehicleQuat = Cesium.Transforms.headingPitchRollQuaternion(vehiclePos, hpr)
+    	mountQuat1 = Cesium.Quaternion.fromHeadingPitchRoll(hpr_mount1)
+    	mountQuat2 = Cesium.Quaternion.fromHeadingPitchRoll(hpr_mount2)
+    	mountQuat3 = Cesium.Quaternion.fromHeadingPitchRoll(hpr_mount3)
+    	Cesium.Quaternion.multiply(mountQuat2, mountQuat1, mountQuat)
+    	Cesium.Quaternion.multiply(mountQuat3, mountQuat, mountQuat)
+    	Cesium.Quaternion.multiply(vehicleQuat, mountQuat, vehicleQuat)
+    	var camRot = Cesium.Matrix3.fromQuaternion(vehicleQuat);  	
+
+    	var camPos = aircraft.position
+
+    	var camProj = new Cesium.Matrix3(1/1.8,  0.0,  0.5,
+    								     0.0,  (122.6/94.4)/1.8,  0.5,
+    								     0.0,  0.0,  1);
+    	
+    	var camDistR = new Cesium.Cartesian3(-2.60e-01, 8.02e-02, 0.0); // not used yet
+    	var camDistT = new Cesium.Cartesian2(-2.42e-04, 2.61e-04); // not used yet
+    	
+        // compute ground footprint on ellipsoid
+        var coords = [];
+        var lookDir = new Cesium.Cartesian3();
+        var invCamProj = Cesium.Matrix3.inverse(camProj, new Cesium.Matrix3());
+
+        for (var i = 0; i < 4; i++) {
+
+            var corner;
+            if (i === 0) {
+                //corner = new Cartesian3(0.0, 0.0, 1.0);
+                corner = new Cesium.Cartesian3(-0.5, -0.5, 1.0);
+            }
+            else if (i === 1) {
+                //corner = new Cartesian3(1.0, 0.0, 1.0);
+                corner = new Cesium.Cartesian3(1.5, -0.5, 1.0);
+            }
+            else if (i === 2) {
+                //corner = new Cartesian3(1.0, 1.0, 1.0);
+                corner = new Cesium.Cartesian3(1.5, 1.5, 1.0);
+            }
+            else if (i === 3) {
+                //corner = new Cartesian3(0.0, 1.0, 1.0);
+                corner = new Cesium.Cartesian3(-0.5, 1.5, 1.0);
+            }
+
+            // transform normalized coordinates to look direction in camera frame
+            Cesium.Matrix3.multiplyByVector(invCamProj, corner, lookDir);
+
+            // transform look dir to globe frame
+            Cesium.Matrix3.multiplyByVector(camRot, lookDir, lookDir);
+
+            // intersect ray
+            var ground;
+            var ray = new Cesium.Ray(camPos, lookDir);
+            // var intersects = Cesium.IntersectionTests.rayEllipsoid(ray, Cesium.Ellipsoid.WGS84);
+            var intersects = scene.globe.pick(ray, scene);
+            if (intersects == null) {
+//               ground = IntersectionTests.grazingAltitudeLocation(ray, Cesium.Ellipsoid.WGS84);
+               ground = Cesium.Ray.getPoint(ray, 4000.0);
+            }
+            else { 
+//               ground = Cesium.Ray.getPoint(ray, intersects.start); // only valid if Cesium.IntersectionTests.rayEllipsoid(ray, Cesium.Ellipsoid.WGS84); is used
+            	ground = intersects;
+            }
+            coords[i] = ground;
+            
+        }
+        
+        var sensor_line = get_by_id(sensor_lines, 'sensor_line')
+    	if (sensor_line != null){
+    		sensor_lines.remove(sensor_line)
+    	}
+    	
+    	if (coords) {
+	    	sensor_lines.add({
+	            id : 'sensor_line',
+	            show : pos_target.show,
+	            positions : [aircraft.position, coords[0], aircraft.position, coords[1], aircraft.position, coords[2], aircraft.position, coords[3], aircraft.position],
+	            width : 2,
+	            material : Cesium.Material.fromType('Color', {
+	                color : Cesium.Color.SNOW
+	            })
+	        })
+	        
+	        if (sensor_footprint) {
+	        	viewer.scene.primitives.remove(sensor_footprint)
+		    	sensor_footprint = undefined
+	        }
+
+	        var sensor_footprint_geom = new Cesium.GeometryInstance({
+	            id: 'sensor_footprint',
+	            geometry: new Cesium.PolygonGeometry({
+	                polygonHierarchy: {
+	                    positions: [coords[0], coords[1], coords[2], coords[3]]
+	                }
+	            }),
+	            attributes: {
+	                color: Cesium.ColorGeometryInstanceAttribute.fromColor(new Cesium.Color(1.0, 0.0, 0.0, 0.4))
+	            }
+	        });
+	    	
+
+	        sensor_footprint = new Cesium.GroundPrimitive({geometryInstances : [sensor_footprint_geom],
+	        											   allowPicking : false,
+	        											   asynchronous : false
+	        											  });
+	    	scene.primitives.add(sensor_footprint)
+    	}
+    		
+    }
     
     function toggle_value(btn_ref, var_to_toggle) {
     	var_to_toggle.value = !var_to_toggle.value;
