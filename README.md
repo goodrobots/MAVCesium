@@ -12,7 +12,8 @@ The project is designed to run on a local machine to maximise performance, howev
 ### Screenshots
 ![screenshot 1 of webapp](https://github.com/SamuelDudley/MAVCesium/blob/gh-pages/screenshots/CMAC_HUD.png "screenshot with HUD")
 ![screenshot 2 of webapp](https://github.com/SamuelDudley/MAVCesium/blob/gh-pages/screenshots/CMAC_SMALL_HUD.png "screenshot with small HUD")
-![screenshot 3 of webapp](https://github.com/SamuelDudley/MAVCesium/blob/gh-pages/screenshots/NO_HUD.png "screenshot with no HUD")
+![screenshot 3 of webapp](https://github.com/SamuelDudley/MAVCesium/blob/gh-pages/screenshots/SENSOR_FOOTPRINT.png  "screenshot with sensor footprint")
+
 
 ### Development
 Although currently under development, this module provides a usable position and attitude display, HUD, geofence display and limited mission display capabilities.
