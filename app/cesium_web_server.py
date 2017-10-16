@@ -12,7 +12,8 @@ import logging
 
 from config import SERVER_INTERFACE, SERVER_PORT, APP_SECRET_KEY, WEBSOCKET, BING_API_KEY, APP_DEBUG, APP_PREFIX
                 
-import os, json
+import os, json, sys, select
+import Queue, threading
 
 live_web_sockets = set()
 
@@ -125,8 +126,99 @@ def main(module):
     if APP_DEBUG:
         print("Tornado finished")
     server.stop()
+    
+class Connection(object):
+    def __init__(self, connection):
+        self.control_connection = connection # a MAVLink connection
+        self.control_link = mavutil.mavlink.MAVLink(self.control_connection)
+        self.control_link.srcSystem = 11
+        self.control_link.srcComponent = 220 #195
+        
+    def set_component(self, val):
+        self.control_link.srcComponent = val
+    
+    def set_system(self, val):
+        self.control_link.srcSystem = val
      
+class module(object):
+    def __init__(self, optsargs):
+        (self.opts, self.args) = optsargs
+        self.message_queue = Queue.Queue()
+        self.pos_target = {}
+        self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD',
+                            'ATTITUDE', 'GLOBAL_POSITION_INT',
+                            'SYS_STATUS', 'MISSION_CURRENT',
+                            'STATUSTEXT', 'FENCE_STATUS', 'WIND']
+        try:
+            self.connection = Connection(mavutil.mavlink_connection(self.opts.connection))
+        except Exception as err:
+            print("Failed to connect to %s : %s" %(self.opts.connection,err))
+            sys.exit(1)
+        server_thread = threading.Thread(target=main, args = (self,))
+        server_thread.daemon = True
+        server_thread.start()
+        self.main_loop()
+    
+    def callback(self, data):
+        '''callback for data coming in from a websocket'''
+        self.message_queue.put_nowait(data)
+        
+    def send_data(self, data, target = None):
+        '''push json data to the browser via a websocket'''
+        payload = json.dumps(data).encode('utf8')
+        websocket_send_message(payload)
+        # TODO: direct messages to individual websockets, e.g. new connections
+    def process_connection_in(self):
+        inputready,outputready,exceptready = select.select([self.connection.control_connection.port],[],[],0.01)
+        # block for 0.01 sec if there is nothing on the connection
+        # otherwise we just dive right in...
+            
+        for s in inputready:
+            msg = self.connection.control_connection.recv_msg()
+            if msg:
+                if msg.get_type() in self.data_stream:
+                    msg_dict = msg.to_dict()
+                    msg_dict['timestamp'] = msg._timestamp
+                    self.send_data({'mav_data':msg_dict})
+                
+                if msg.get_type() == 'POSITION_TARGET_GLOBAL_INT':
+                    msg_dict = msg.to_dict()
+                    self.pos_target['lat']= msg_dict['lat_int']
+                    self.pos_target['lon'] = msg_dict['lon_int']
+                    self.pos_target['alt_wgs84'] = msg_dict['alt']
+                 
+                    self.send_data({"pos_target_data":self.pos_target})
+            
+    def main_loop(self):
+        self.connection.control_link.request_data_stream_send(1, 1,
+                                                mavutil.mavlink.MAV_DATA_STREAM_ALL,
+                                                10, 1)
+        while True:
+            self.process_connection_in() # any down time (max 0.01 sec) occurs here
+
+        
+        
 if __name__ == '__main__':
-    main(module=None)
+    # we are running outside MAVProxy in stand alone mode
+    from optparse import OptionParser
+    
+    parser = OptionParser('cesium_web_server.py [options]')
+    
+    parser.add_option("--connection", dest="connection", type='str',
+                      help="MAVLink computer connection", default="tcp:127.0.0.1:5763")
+    
+    parser.add_option("--dialect", dest="dialect", help="MAVLink dialect", default="ardupilotmega")
+    
+    optsargs = parser.parse_args()
+    (opts,args) = optsargs
+    
+    os.environ['MAVLINK20'] = '1' # force MAVLink v2 for the moment
+    from pymavlink import mavutil
+    mavutil.set_dialect(opts.dialect)
+    module(optsargs)
+    
+    
+
+    
      
     
