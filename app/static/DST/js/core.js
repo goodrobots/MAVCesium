@@ -45,6 +45,8 @@ $(function () { // init tool tips and only show on hover
     
     var playback = {value: false}
     
+    var show_sensor_footprint = {value: false}
+    
     var top_view = {value: true,
     		init_flag: false,
     		alt: 1000}
@@ -438,43 +440,47 @@ $(function () { // init tool tips and only show on hover
     	if (sensor_line != null){
     		sensor_lines.remove(sensor_line)
     	}
+        
+        if (sensor_footprint) {
+        	viewer.scene.primitives.remove(sensor_footprint)
+	    	sensor_footprint = undefined
+        }
+        
+        if (show_sensor_footprint.value){
+        	
+       
     	
-    	if (coords) {
-	    	sensor_lines.add({
-	            id : 'sensor_line',
-	            show : pos_target.show,
-	            positions : [aircraft.position, coords[0], aircraft.position, coords[1], aircraft.position, coords[2], aircraft.position, coords[3], aircraft.position],
-	            width : 2,
-	            material : Cesium.Material.fromType('Color', {
-	                color : Cesium.Color.SNOW
-	            })
-	        })
-	        
-	        if (sensor_footprint) {
-	        	viewer.scene.primitives.remove(sensor_footprint)
-		    	sensor_footprint = undefined
-	        }
-
-	        var sensor_footprint_geom = new Cesium.GeometryInstance({
-	            id: 'sensor_footprint',
-	            geometry: new Cesium.PolygonGeometry({
-	                polygonHierarchy: {
-	                    positions: [coords[0], coords[1], coords[2], coords[3]]
-	                }
-	            }),
-	            attributes: {
-	                color: Cesium.ColorGeometryInstanceAttribute.fromColor(new Cesium.Color(1.0, 0.0, 0.0, 0.4))
-	            }
-	        });
-	    	
-
-	        sensor_footprint = new Cesium.GroundPrimitive({geometryInstances : [sensor_footprint_geom],
-	        											   allowPicking : false,
-	        											   asynchronous : false
-	        											  });
-	    	scene.primitives.add(sensor_footprint)
+	    	if (coords) {
+		    	sensor_lines.add({
+		            id : 'sensor_line',
+		            show : pos_target.show,
+		            positions : [aircraft.position, coords[0], aircraft.position, coords[1], aircraft.position, coords[2], aircraft.position, coords[3], aircraft.position],
+		            width : 2,
+		            material : Cesium.Material.fromType('Color', {
+		                color : Cesium.Color.SNOW
+		            })
+		        })
+	
+		        var sensor_footprint_geom = new Cesium.GeometryInstance({
+		            id: 'sensor_footprint',
+		            geometry: new Cesium.PolygonGeometry({
+		                polygonHierarchy: {
+		                    positions: [coords[0], coords[1], coords[2], coords[3]]
+		                }
+		            }),
+		            attributes: {
+		                color: Cesium.ColorGeometryInstanceAttribute.fromColor(new Cesium.Color(1.0, 0.0, 0.0, 0.4))
+		            }
+		        });
+		    	
+	
+		        sensor_footprint = new Cesium.GroundPrimitive({geometryInstances : [sensor_footprint_geom],
+		        											   allowPicking : false,
+		        											   asynchronous : false
+		        											  });
+		    	scene.primitives.add(sensor_footprint)
+	    	 }
     	}
-    		
     }
     
     function toggle_value(btn_ref, var_to_toggle) {
