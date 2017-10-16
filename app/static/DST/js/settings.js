@@ -13,6 +13,10 @@ toggle_dynamic_lighting = function(btn_ref, var_to_toggle) {
 	scene.globe.enableLighting = var_to_toggle.value
 }
 
+toggle_sensor_footprint = function(btn_ref, var_to_toggle) {
+	toggle_value(btn_ref, var_to_toggle)
+}
+
 $('#toggle_pos_target_line').on('click', function(event) {
 	  event.preventDefault()
 	  pos_target.show = !pos_target.show 
