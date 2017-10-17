@@ -9,6 +9,9 @@ As a ground control station operator I often find myself wishing [MAVProxy](http
 
 The project is designed to run on a local machine to maximise performance, however the [demo](http://www.MAVCesium.io/) is displaying the output of a [MAVProxy](https://github.com/Dronecode/MAVProxy) ground station connected to a simulated vehicle flying around [CMAC](https://www.google.com.au/maps/place/Canberra+Model+Aircraft+Club+Flying+Field/@-35.362771,149.1636837,945m/data=!3m1!1e3!4m5!3m4!1s0x6b164b893600af05:0xa5e0eae0c1fb648e!8m2!3d-35.3627754!4d149.1658777).
 
+### Video
+[![Demo Video](https://img.youtube.com/vi/LdBDePADmc0/0.jpg)](https://www.youtube.com/watch?v=LdBDePADmc0)]
+
 ### Screenshots
 ![screenshot 1 of webapp](https://github.com/SamuelDudley/MAVCesium/blob/gh-pages/screenshots/CMAC_HUD.png "screenshot with HUD")
 ![screenshot 2 of webapp](https://github.com/SamuelDudley/MAVCesium/blob/gh-pages/screenshots/CMAC_SMALL_HUD.png "screenshot with small HUD")
