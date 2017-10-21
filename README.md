@@ -1,5 +1,5 @@
 # MAVCesium - An experimental web based map display for [MAVProxy](https://github.com/ArduPilot/MAVProxy) based on [Cesium](https://github.com/AnalyticalGraphicsInc/cesium)
-**[ Click here to see a live demo ](http://www.MAVCesium.io/)** <-- 26/Sep/2017 Server currently down... Stand by as I get another running :)
+**[ Click here to see a live demo ](http://www.MAVCesium.io/)**
 
 *Notes: Your browser will need to support webgl and web sockets. Please view on a desktop machine as the application does not currently support responsive layouts.*
 
@@ -8,6 +8,8 @@
 As a ground control station operator I often find myself wishing [MAVProxy](https://github.com/ArduPilot/MAVProxy) had a more intuitive way of displaying an air vehicle attitude and position. This project uses [Cesium](https://github.com/AnalyticalGraphicsInc/cesium) to display the position and attitude information being received by a [MAVProxy](https://github.com/ArduPilot/MAVProxy) ground station in real time.
 
 The project is designed to run on a local machine to maximise performance, however the [demo](http://www.MAVCesium.io/) is displaying the output of a [MAVProxy](https://github.com/Dronecode/MAVProxy) ground station connected to a simulated vehicle flying around [CMAC](https://www.google.com.au/maps/place/Canberra+Model+Aircraft+Club+Flying+Field/@-35.362771,149.1636837,945m/data=!3m1!1e3!4m5!3m4!1s0x6b164b893600af05:0xa5e0eae0c1fb648e!8m2!3d-35.3627754!4d149.1658777).
+
+**Note:** MAVCesium can now run stand alone from [MAVProxy](https://github.com/ArduPilot/MAVProxy). See [this issue](https://github.com/SamuelDudley/MAVCesium/issues/26) if you would like to know more.
 
 ### Video
 [![Demo Video](https://img.youtube.com/vi/LdBDePADmc0/0.jpg)](https://www.youtube.com/watch?v=LdBDePADmc0)]
@@ -58,7 +60,7 @@ The display is updated only as new data is received via the telemetry stream, so
  python setup.py build install --user
  ```
 * Run [MAVProxy](https://github.com/ArduPilot/MAVProxy) and load the MAVCesium module with the `module load cesium` command in the MAVProxy console
-* Point your webgl enabled browser to http://127.0.0.1:5000/ and once you start receiving valid mavlink messages from the vehicle connected to the MAVProxy ground station you will see the vehicle model in the center of your screen with a HUD overlay
+* Point your webgl enabled browser to http://127.0.0.1:5000/mavcesium/ and once you start receiving valid mavlink messages from the vehicle connected to the MAVProxy ground station you will see the vehicle model in the center of your screen with a HUD overlay
 
 * If you have other computers / tablets / ipads on your network you can also open webgl capable browsers on them and point it to the network facing IP address of the computer that MAVProxy is running on.
 * For bonus points replace the [Griffon Aerospace MQM-170 Outlaw gltf model](https://github.com/SamuelDudley/MAVCesium/blob/master/mavproxy_cesium/app/static/DST/models/rat.gltf) with something that resembles your air vehicle! You can convert .dae models to .gltf using [this](https://cesiumjs.org/convertmodel.html) online tool
