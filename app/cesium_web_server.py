@@ -143,7 +143,7 @@ class Connection(object):
 class module(object):
     def __init__(self, optsargs):
         (self.opts, self.args) = optsargs
-        self.message_queue = Queue.Queue()
+        self.message_queue = Queue.Queue(maxsize=10) # limit queue oject count to 10
         self.pos_target = {}
         self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD',
                             'ATTITUDE', 'GLOBAL_POSITION_INT',
@@ -161,13 +161,29 @@ class module(object):
     
     def callback(self, data):
         '''callback for data coming in from a websocket'''
-        self.message_queue.put_nowait(data)
+        try:
+            self.message_queue.put_nowait(data)
+        except Queue.Full:
+            print ('Queue full, client data is unable to be enqueued')
+        
         
     def send_data(self, data, target = None):
         '''push json data to the browser via a websocket'''
         payload = json.dumps(data).encode('utf8')
         websocket_send_message(payload)
         # TODO: direct messages to individual websockets, e.g. new connections
+    
+    def drain_message_queue(self):
+        '''unload data that has been placed on the message queue by the client'''
+        while not self.message_queue.empty():
+            try:
+                data = self.message_queue.get_nowait()
+            except Queue.Empty:
+                return
+            else:
+                # TODO handle the user feedback
+                return
+    
     def process_connection_in(self):
         inputready,outputready,exceptready = select.select([self.connection.control_connection.port],[],[],0.01)
         # block for 0.01 sec if there is nothing on the connection
@@ -176,11 +192,6 @@ class module(object):
         for s in inputready:
             msg = self.connection.control_connection.recv_msg()
             if msg:
-                if msg.get_type() in self.data_stream:
-                    msg_dict = msg.to_dict()
-                    msg_dict['timestamp'] = msg._timestamp
-                    self.send_data({'mav_data':msg_dict})
-                
                 if msg.get_type() == 'POSITION_TARGET_GLOBAL_INT':
                     msg_dict = msg.to_dict()
                     self.pos_target['lat']= msg_dict['lat_int']
@@ -188,15 +199,19 @@ class module(object):
                     self.pos_target['alt_wgs84'] = msg_dict['alt']
                  
                     self.send_data({"pos_target_data":self.pos_target})
-            
+                    
+                elif msg.get_type() in self.data_stream:
+                    msg_dict = msg.to_dict()
+                    msg_dict['timestamp'] = msg._timestamp
+                    self.send_data({'mav_data':msg_dict})
+                    
     def main_loop(self):
         self.connection.control_link.request_data_stream_send(1, 1,
                                                 mavutil.mavlink.MAV_DATA_STREAM_ALL,
                                                 10, 1)
         while True:
             self.process_connection_in() # any down time (max 0.01 sec) occurs here
-
-        
+            self.drain_message_queue()
         
 if __name__ == '__main__':
     # we are running outside MAVProxy in stand alone mode
