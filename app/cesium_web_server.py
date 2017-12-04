@@ -15,6 +15,7 @@ from config import SERVER_INTERFACE, SERVER_PORT, APP_SECRET_KEY, WEBSOCKET, BIN
 import os, json, sys, select
 import Queue, threading
 
+lock = threading.Lock()
 live_web_sockets = set()
 
 try: # try to use pkg_resources to allow for zipped python eggs
@@ -49,9 +50,10 @@ class DefaultWebSocket(tornado.websocket.WebSocketHandler):
         if APP_DEBUG:
             print("websocket opened!")
         self.set_nodelay(True)
+        
+        lock.acquire()
         live_web_sockets.add(self)
-        if APP_DEBUG:
-            self.write_message('you have been connected!')
+        lock.release()
      
     def on_message(self, message):
         if APP_DEBUG:
@@ -61,19 +63,21 @@ class DefaultWebSocket(tornado.websocket.WebSocketHandler):
             self.callback(message) # this sends it to the module.send_out_queue_data for further processing.
         else:
             print("no callback for message: {0}".format(message))
+        print dir(self)
 
     def on_close(self):
         if APP_DEBUG:
             print("websocket closed")
+        del self
 
 class Application(tornado.web.Application):
-    def __init__(self, module):
+    def __init__(self, module_callback):
         handlers = [
             (r"/"+APP_PREFIX, MainHandler),
             (r"/"+APP_PREFIX+"context/", ContextHandler),
         ]
-        if module:
-            cb = dict(callback=module.callback)
+        if module_callback:
+            cb = dict(callback=module_callback)
         else:
             cb = dict(callback=None)
         handlers.append((r"/"+APP_PREFIX+"websocket/", DefaultWebSocket, cb))
@@ -87,9 +91,9 @@ class Application(tornado.web.Application):
         )
         super(Application, self).__init__(handlers, **settings)
 
-def start_app(module):
+def start_app(module_callback):
     logging.getLogger("tornado").setLevel(logging.WARNING)
-    application = Application(module)
+    application = Application(module_callback)
     server = tornado.httpserver.HTTPServer(application)
     server.listen(port = int(SERVER_PORT), address = str(SERVER_INTERFACE))
     if APP_DEBUG:
@@ -98,10 +102,12 @@ def start_app(module):
 
 def close_all_websockets():
     removable = set()
+    lock.acquire()
     for ws in live_web_sockets:
         removable.add(ws)
     for ws in removable:
         live_web_sockets.remove(ws)
+    lock.release()
             
 def stop_tornado():
     close_all_websockets()
@@ -112,16 +118,21 @@ def stop_tornado():
 
 def websocket_send_message(message):
     removable = set()
+    lock.acquire()
     for ws in live_web_sockets:
         if not ws.ws_connection or not ws.ws_connection.stream.socket:
             removable.add(ws)
         else:
             ws.write_message(message)
+    lock.release()
+    
+    lock.acquire()
     for ws in removable:
         live_web_sockets.remove(ws)
+    lock.release()
 
-def main(module):
-    server = start_app(module=module)
+def main(module_callback):
+    server = start_app(module_callback=module_callback)
     tornado.ioloop.IOLoop.current().start()
     if APP_DEBUG:
         print("Tornado finished")
@@ -130,9 +141,9 @@ def main(module):
 class Connection(object):
     def __init__(self, connection):
         self.control_connection = connection # a MAVLink connection
-        self.control_link = mavutil.mavlink.MAVLink(self.control_connection)
+        self.control_link = self.control_connection.mav
         self.control_link.srcSystem = 11
-        self.control_link.srcComponent = 220 #195
+        self.control_link.srcComponent = 220 
         
     def set_component(self, val):
         self.control_link.srcComponent = val
@@ -143,7 +154,7 @@ class Connection(object):
 class module(object):
     def __init__(self, optsargs):
         (self.opts, self.args) = optsargs
-        self.message_queue = Queue.Queue(maxsize=10) # limit queue oject count to 10
+        self.message_queue = Queue.Queue(maxsize=10) # limit queue object count to 10
         self.pos_target = {}
         self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD',
                             'ATTITUDE', 'GLOBAL_POSITION_INT',
@@ -154,7 +165,7 @@ class module(object):
         except Exception as err:
             print("Failed to connect to %s : %s" %(self.opts.connection,err))
             sys.exit(1)
-        server_thread = threading.Thread(target=main, args = (self,))
+        server_thread = threading.Thread(target=main, args = (self.callback,))
         server_thread.daemon = True
         server_thread.start()
         self.main_loop()
@@ -172,7 +183,7 @@ class module(object):
         payload = json.dumps(data).encode('utf8')
         websocket_send_message(payload)
         # TODO: direct messages to individual websockets, e.g. new connections
-    
+        
     def drain_message_queue(self):
         '''unload data that has been placed on the message queue by the client'''
         while not self.message_queue.empty():
@@ -181,36 +192,44 @@ class module(object):
             except Queue.Empty:
                 return
             else:
-                # TODO handle the user feedback
-                return
-    
-    def process_connection_in(self):
-        inputready,outputready,exceptready = select.select([self.connection.control_connection.port],[],[],0.01)
-        # block for 0.01 sec if there is nothing on the connection
-        # otherwise we just dive right in...
+                # TODO: handle the user feedback
+                pass
             
+    def process_connection_in(self):
+        '''receive MAVLink messages'''
+        inputready,outputready,exceptready = select.select([self.connection.control_connection.port],[],[],0.1)
+        # block for 0.1 sec if there is nothing on the connection
+        # otherwise we just dive right in...
         for s in inputready:
-            msg = self.connection.control_connection.recv_msg()
-            if msg:
-                if msg.get_type() == 'POSITION_TARGET_GLOBAL_INT':
-                    msg_dict = msg.to_dict()
-                    self.pos_target['lat']= msg_dict['lat_int']
-                    self.pos_target['lon'] = msg_dict['lon_int']
-                    self.pos_target['alt_wgs84'] = msg_dict['alt']
-                 
-                    self.send_data({"pos_target_data":self.pos_target})
-                    
-                elif msg.get_type() in self.data_stream:
-                    msg_dict = msg.to_dict()
-                    msg_dict['timestamp'] = msg._timestamp
-                    self.send_data({'mav_data':msg_dict})
+            self.connection.control_connection.recv_msg()
+            
+    def handle_msg(self, con, msg):
+        '''callback for received MAVLink messages''' 
+        if msg.get_type() == 'POSITION_TARGET_GLOBAL_INT':
+            msg_dict = msg.to_dict()
+            self.pos_target['lat']= msg_dict['lat_int']
+            self.pos_target['lon'] = msg_dict['lon_int']
+            self.pos_target['alt_wgs84'] = msg_dict['alt']
+         
+            self.send_data({"pos_target_data":self.pos_target})
+            
+        elif msg.get_type() in self.data_stream:
+            msg_dict = msg.to_dict()
+            msg_dict['timestamp'] = msg._timestamp
+            self.send_data({'mav_data':msg_dict})
+        else:
+            # message type not handleded 
+            pass
                     
     def main_loop(self):
+        '''main loop of the module'''
+        self.connection.control_connection.message_hooks.append(self.handle_msg)
         self.connection.control_link.request_data_stream_send(1, 1,
                                                 mavutil.mavlink.MAV_DATA_STREAM_ALL,
-                                                10, 1)
+                                                8, 1)
+
         while True:
-            self.process_connection_in() # any down time (max 0.01 sec) occurs here
+            self.process_connection_in() # any down time (max 0.1 sec) occurs here
             self.drain_message_queue()
         
 if __name__ == '__main__':

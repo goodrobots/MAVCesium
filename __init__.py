@@ -55,7 +55,7 @@ class CesiumModule(mp_module.MPModule):
     def start_server(self):
         if self.main_counter == 0:
             self.main_counter += 1
-            self.server_thread = threading.Thread(target=cesium_web_server.main, args = (self,))
+            self.server_thread = threading.Thread(target=cesium_web_server.main, args = (self.callback,))
             self.server_thread.daemon = True
             self.server_thread.start()
 #             log.startLogging(sys.stdout)
