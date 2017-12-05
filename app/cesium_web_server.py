@@ -9,8 +9,6 @@ import tornado.web
 import tornado.websocket
 import tornado.httpserver
 import logging
-
-from config import SERVER_INTERFACE, SERVER_PORT, APP_SECRET_KEY, WEBSOCKET, BING_API_KEY, APP_DEBUG, APP_PREFIX
                 
 import os, json, sys, select
 import Queue, threading
@@ -29,10 +27,17 @@ except: # otherwise fall back to the standard file system
     APP_TEMPLATES = os.path.join(APP_ROOT, 'templates')
 
 class MainHandler(tornado.web.RequestHandler):
+    def initialize(self, configuration, callback):
+        self.configuration = configuration
+        
     def get(self):
-        self.render("index.html", bing_api_key=BING_API_KEY, websocket=WEBSOCKET, markers=False, app_prefix = APP_PREFIX)
+        self.render("index.html", bing_api_key=self.configuration.BING_API_KEY, websocket=self.configuration.WEBSOCKET, markers=False,
+                     app_prefix = self.configuration.APP_PREFIX)
         
 class ContextHandler(tornado.web.RequestHandler):
+    def initialize(self, configuration, callback):
+        self.configuration = configuration
+        
     def post(self):
         markers = [self.get_argument("markers", default=False, strip=True).lstrip('"').rstrip('"')]
         if 'null' in markers:
@@ -40,14 +45,15 @@ class ContextHandler(tornado.web.RequestHandler):
         self.render("context_menu.html", markers=markers)
 
 class DefaultWebSocket(tornado.websocket.WebSocketHandler):
-    def initialize(self, callback):
+    def initialize(self, configuration, callback):
+        self.configuration = configuration
         self.callback = callback
     
     def check_origin(self, origin):
         return True
         
     def open(self):
-        if APP_DEBUG:
+        if self.configuration.APP_DEBUG:
             print("websocket opened!")
         self.set_nodelay(True)
         
@@ -56,7 +62,7 @@ class DefaultWebSocket(tornado.websocket.WebSocketHandler):
         lock.release()
      
     def on_message(self, message):
-        if APP_DEBUG:
+        if self.configuration.APP_DEBUG:
             print("received websocket message: {0}".format(message))
         message = json.loads(message)
         if self.callback:
@@ -66,38 +72,35 @@ class DefaultWebSocket(tornado.websocket.WebSocketHandler):
         print dir(self)
 
     def on_close(self):
-        if APP_DEBUG:
+        if self.configuration.APP_DEBUG:
             print("websocket closed")
         del self
 
 class Application(tornado.web.Application):
-    def __init__(self, module_callback):
+    def __init__(self, config, module_callback):
+        args = dict(configuration=config, callback=module_callback)
         handlers = [
-            (r"/"+APP_PREFIX, MainHandler),
-            (r"/"+APP_PREFIX+"context/", ContextHandler),
+            (r"/"+config.APP_PREFIX, MainHandler, args),
+            (r"/"+config.APP_PREFIX+"context/", ContextHandler, args),
+            (r"/"+config.APP_PREFIX+"websocket/", DefaultWebSocket, args),
         ]
-        if module_callback:
-            cb = dict(callback=module_callback)
-        else:
-            cb = dict(callback=None)
-        handlers.append((r"/"+APP_PREFIX+"websocket/", DefaultWebSocket, cb))
 
         settings = dict(
-            cookie_secret = APP_SECRET_KEY,
+            cookie_secret = config.APP_SECRET_KEY,
             template_path = APP_TEMPLATES,
             static_path = APP_STATIC,
-            static_url_prefix = "/"+APP_PREFIX+"static/",
+            static_url_prefix = "/"+config.APP_PREFIX+"static/",
             xsrf_cookies = False,
         )
         super(Application, self).__init__(handlers, **settings)
 
-def start_app(module_callback):
+def start_app(config, module_callback):
     logging.getLogger("tornado").setLevel(logging.WARNING)
-    application = Application(module_callback)
+    application = Application(config, module_callback)
     server = tornado.httpserver.HTTPServer(application)
-    server.listen(port = int(SERVER_PORT), address = str(SERVER_INTERFACE))
-    if APP_DEBUG:
-        print("Starting Tornado server: {0}".format(SERVER_INTERFACE+":"+SERVER_PORT+"/"+APP_PREFIX))
+    server.listen(port = int(config.SERVER_PORT), address = str(config.SERVER_INTERFACE))
+    if config.APP_DEBUG:
+        print("Starting Tornado server: {0}".format(config.SERVER_INTERFACE+":"+config.SERVER_PORT+"/"+config.APP_PREFIX))
     return server
 
 def close_all_websockets():
@@ -109,11 +112,11 @@ def close_all_websockets():
         live_web_sockets.remove(ws)
     lock.release()
             
-def stop_tornado():
+def stop_tornado(config):
     close_all_websockets()
     ioloop = tornado.ioloop.IOLoop.current()
     ioloop.add_callback(ioloop.stop)
-    if APP_DEBUG:
+    if config.APP_DEBUG:
         print("Asked Tornado to exit")
 
 def websocket_send_message(message):
@@ -131,10 +134,10 @@ def websocket_send_message(message):
         live_web_sockets.remove(ws)
     lock.release()
 
-def main(module_callback):
-    server = start_app(module_callback=module_callback)
+def main(config, module_callback):
+    server = start_app(config=config, module_callback=module_callback)
     tornado.ioloop.IOLoop.current().start()
-    if APP_DEBUG:
+    if config.APP_DEBUG:
         print("Tornado finished")
     server.stop()
     
@@ -160,12 +163,15 @@ class module(object):
                             'ATTITUDE', 'GLOBAL_POSITION_INT',
                             'SYS_STATUS', 'MISSION_CURRENT',
                             'STATUSTEXT', 'FENCE_STATUS', 'WIND']
+        
+        self.config = Configuration(self.opts.configuration)
+        
         try:
             self.connection = Connection(mavutil.mavlink_connection(self.opts.connection))
         except Exception as err:
             print("Failed to connect to %s : %s" %(self.opts.connection,err))
             sys.exit(1)
-        server_thread = threading.Thread(target=main, args = (self.callback,))
+        server_thread = threading.Thread(target=main, args = (self.config, self.callback,))
         server_thread.daemon = True
         server_thread.start()
         self.main_loop()
@@ -226,7 +232,7 @@ class module(object):
         self.connection.control_connection.message_hooks.append(self.handle_msg)
         self.connection.control_link.request_data_stream_send(1, 1,
                                                 mavutil.mavlink.MAV_DATA_STREAM_ALL,
-                                                8, 1)
+                                                self.opts.stream_rate, 1)
 
         while True:
             self.process_connection_in() # any down time (max 0.1 sec) occurs here
@@ -235,14 +241,16 @@ class module(object):
 if __name__ == '__main__':
     # we are running outside MAVProxy in stand alone mode
     from optparse import OptionParser
+    from config import Configuration
     
     parser = OptionParser('cesium_web_server.py [options]')
     
     parser.add_option("--connection", dest="connection", type='str',
                       help="MAVLink computer connection", default="tcp:127.0.0.1:5763")
-    
     parser.add_option("--dialect", dest="dialect", help="MAVLink dialect", default="ardupilotmega")
-    
+    parser.add_option("--stream-rate", dest="stream_rate", help="requested MAVLink stream rate from AP", type='int', default=10)
+    parser.add_option("--configuration", dest="configuration", type='str',
+                      help="path to MAVCesium configuration file", default=None)
     optsargs = parser.parse_args()
     (opts,args) = optsargs
     
