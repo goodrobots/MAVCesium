@@ -67,7 +67,7 @@ The display is updated only as new data is received via the telemetry stream, so
 
 ### Module usage
 The top bar of the MAVCesium display contains similar data to the MAVProxy map. Here you will find the cursor lat, lon, alt and information on left click positions.
-You can access the (currently limited) context menu via double right click, while camera controls and settings can be found in the upper right of the screen.
+You can access the context menu via single right click, while camera controls and settings can be found in the upper right of the screen.
 HUD overlay visibility can be toggled by pressing `h` when the MAVCesium display is active and can be made smaller via a button in the settings menu.
 
 Further documentation is under construction [here](http://samueldudley.github.io/MAVCesium/)
