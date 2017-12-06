@@ -10,7 +10,7 @@ import tornado.websocket
 import tornado.httpserver
 import logging
                 
-import os, json, sys, select
+import os, json, sys, select, signal
 import Queue, threading
 
 lock = threading.Lock()
@@ -156,24 +156,26 @@ class Connection(object):
      
 class module(object):
     def __init__(self, optsargs):
+        self.exit = False
         (self.opts, self.args) = optsargs
+        self.server_thread = None
+        self.config = Configuration(self.opts.configuration)
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
         self.message_queue = Queue.Queue(maxsize=10) # limit queue object count to 10
         self.pos_target = {}
         self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD',
                             'ATTITUDE', 'GLOBAL_POSITION_INT',
                             'SYS_STATUS', 'MISSION_CURRENT',
                             'STATUSTEXT', 'FENCE_STATUS', 'WIND']
-        
-        self.config = Configuration(self.opts.configuration)
-        
         try:
             self.connection = Connection(mavutil.mavlink_connection(self.opts.connection))
         except Exception as err:
             print("Failed to connect to %s : %s" %(self.opts.connection,err))
             sys.exit(1)
-        server_thread = threading.Thread(target=main, args = (self.config, self.callback,))
-        server_thread.daemon = True
-        server_thread.start()
+        self.server_thread = threading.Thread(target=main, args = (self.config, self.callback,))
+        self.server_thread.daemon = True
+        self.server_thread.start()
         self.main_loop()
     
     def callback(self, data):
@@ -182,7 +184,6 @@ class module(object):
             self.message_queue.put_nowait(data)
         except Queue.Full:
             print ('Queue full, client data is unable to be enqueued')
-        
         
     def send_data(self, data, target = None):
         '''push json data to the browser via a websocket'''
@@ -203,11 +204,18 @@ class module(object):
             
     def process_connection_in(self):
         '''receive MAVLink messages'''
-        inputready,outputready,exceptready = select.select([self.connection.control_connection.port],[],[],0.1)
-        # block for 0.1 sec if there is nothing on the connection
-        # otherwise we just dive right in...
-        for s in inputready:
-            self.connection.control_connection.recv_msg()
+        try:
+            inputready,outputready,exceptready = select.select([self.connection.control_connection.port],[],[],0.1)
+            # block for 0.1 sec if there is nothing on the connection
+            # otherwise we just dive right in...
+            for s in inputready: 
+                self.connection.control_connection.recv_msg()
+            # mavlink buffer is never getting cleared
+            # force clear the buffer to avoid memory leak
+            self.connection.control_connection.mav.buf = bytearray()
+            self.connection.control_connection.mav.buf_index = 0
+        except select.error:
+            pass
             
     def handle_msg(self, con, msg):
         '''callback for received MAVLink messages''' 
@@ -233,10 +241,17 @@ class module(object):
         self.connection.control_link.request_data_stream_send(1, 1,
                                                 mavutil.mavlink.MAV_DATA_STREAM_ALL,
                                                 self.opts.stream_rate, 1)
-
-        while True:
+        while not self.exit:
             self.process_connection_in() # any down time (max 0.1 sec) occurs here
             self.drain_message_queue()
+        print('Module finished')
+    
+    def exit_gracefully(self, signum, frame):
+        self.exit = True
+        if self.server_thread:
+            # attempt to shutdown the tornado server
+            stop_tornado(self.config)
+            self.server_thread.join(timeout=10)
         
 if __name__ == '__main__':
     # we are running outside MAVProxy in stand alone mode
