@@ -212,8 +212,9 @@ class module(object):
                 self.connection.control_connection.recv_msg()
             # mavlink buffer is never getting cleared
             # force clear the buffer to avoid memory leak
-            self.connection.control_connection.mav.buf = bytearray()
-            self.connection.control_connection.mav.buf_index = 0
+            if self.connection.control_connection.mav.buf_len() == 0 and self.connection.control_connection.mav.buf_index != 0:
+                self.connection.control_connection.mav.buf = bytearray()
+                self.connection.control_connection.mav.buf_index = 0
         except select.error:
             pass
             
