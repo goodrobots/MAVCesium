@@ -10,8 +10,11 @@ import tornado.websocket
 import tornado.httpserver
 import logging
                 
-import os, json, sys, select, signal
-import Queue, threading
+import os, json, sys, select, signal, threading
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
 lock = threading.Lock()
 live_web_sockets = set()
@@ -69,7 +72,7 @@ class DefaultWebSocket(tornado.websocket.WebSocketHandler):
             self.callback(message) # this sends it to the module.send_out_queue_data for further processing.
         else:
             print("no callback for message: {0}".format(message))
-        print dir(self)
+        print(dir(self))
 
     def on_close(self):
         if self.configuration.APP_DEBUG:
@@ -162,7 +165,7 @@ class module(object):
         self.config = Configuration(self.opts.configuration)
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
-        self.message_queue = Queue.Queue(maxsize=10) # limit queue object count to 10
+        self.message_queue = queue.Queue(maxsize=10) # limit queue object count to 10
         self.pos_target = {}
         self.data_stream = ['NAV_CONTROLLER_OUTPUT', 'VFR_HUD',
                             'ATTITUDE', 'GLOBAL_POSITION_INT',
@@ -182,7 +185,7 @@ class module(object):
         '''callback for data coming in from a websocket'''
         try:
             self.message_queue.put_nowait(data)
-        except Queue.Full:
+        except queue.Full:
             print ('Queue full, client data is unable to be enqueued')
         
     def send_data(self, data, target = None):
@@ -196,7 +199,7 @@ class module(object):
         while not self.message_queue.empty():
             try:
                 data = self.message_queue.get_nowait()
-            except Queue.Empty:
+            except queue.Empty:
                 return
             else:
                 # TODO: handle the user feedback

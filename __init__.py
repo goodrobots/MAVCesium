@@ -3,19 +3,23 @@ Cesium map module
 Samuel Dudley
 Jan 2016
 '''
-import os, json, time, sys, uuid, urllib2
+import os, json, time, sys, uuid
 
 from MAVProxy.modules.lib import mp_module
 from MAVProxy.modules.lib import mp_settings
 
 from pymavlink import mavutil
-import threading, Queue
+import threading
+try:
+    import Queue as queue
+except ImportError:
+    import queue
 
-from app import cesium_web_server # the tornado web server
+from MAVProxy.modules.mavproxy_cesium.app import cesium_web_server # the tornado web server
 
 import webbrowser # open url's in browser window
 
-from app.config import Configuration
+from MAVProxy.modules.mavproxy_cesium.app.config import Configuration
 
         
 class CesiumModule(mp_module.MPModule):
@@ -33,7 +37,7 @@ class CesiumModule(mp_module.MPModule):
         self.config = Configuration(configuration_path)
         self.main_counter = 0
         
-        self.message_queue = Queue.Queue()
+        self.message_queue = queue.Queue()
         
         self.wp_change_time = 0
         self.fence_change_time = 0
@@ -195,7 +199,7 @@ class CesiumModule(mp_module.MPModule):
         while not self.message_queue.empty():
             payload = self.message_queue.get_nowait()
             if self.cesium_settings.debug:
-                print payload
+                print(payload)
                  
             if 'new_connection' in payload.keys():
                 self.send_defines(target=payload['new_connection'])
