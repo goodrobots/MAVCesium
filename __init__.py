@@ -26,7 +26,11 @@ class CesiumModule(mp_module.MPModule):
                             'ATTITUDE', 'GLOBAL_POSITION_INT',
                             'SYS_STATUS', 'MISSION_CURRENT',
                             'STATUSTEXT', 'FENCE_STATUS', 'WIND']
-        self.config = Configuration() # can pass configuration string here
+        
+        # if a configuration path was passed when the module was loaded attempt to use it
+        configuration_path = kwargs.get('configuration', None)
+            
+        self.config = Configuration(configuration_path)
         self.main_counter = 0
         
         self.message_queue = Queue.Queue()
