@@ -180,6 +180,16 @@ class module(object):
         self.server_thread.daemon = True
         self.server_thread.start()
         self.main_loop()
+        
+    
+    def read_json(self, path = None):
+        if path:
+            rally_path = path
+        else:
+            rally_path = os.path.join(APP_STATIC, 'DST', 'plan', 'rally.json')
+        with open(rally_path, 'r') as fid:
+            rally_data = json.loads(fid.read())
+        self.send_data({"rally_data":rally_data})
     
     def callback(self, data):
         '''callback for data coming in from a websocket'''
@@ -231,10 +241,14 @@ class module(object):
          
             self.send_data({"pos_target_data":self.pos_target})
             
+        elif msg.get_type() == 'HEARTBEAT':
+            self.read_json()
+            
         elif msg.get_type() in self.data_stream:
             msg_dict = msg.to_dict()
             msg_dict['timestamp'] = msg._timestamp
             self.send_data({'mav_data':msg_dict})
+
         else:
             # message type not handleded 
             pass

@@ -160,6 +160,21 @@ $(function () { // init tool tips and only show on hover
             }
         }
     };
+    
+    function update_rally_data(rally_data) {
+        var points = rally_data.points;
+        for (var point in points) {
+            
+            console.log(points[point])
+            create_wp(point, {
+                frame:0,
+                x:points[point][0],
+                y:points[point][1],
+                z:points[point][2]
+            })
+        }
+        
+    }
 
     
 

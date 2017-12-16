@@ -62,6 +62,8 @@ function open_websocket() {
 				update_data_stream(response.mav_data)
 			} else if (response.flightmode) {
 				update_flightmode(response.flightmode)
+	        } else if (response.rally_data) {
+	            update_rally_data(response.rally_data)
 			} else {
 				// Do nothing...
 			}
