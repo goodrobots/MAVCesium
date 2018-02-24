@@ -1,13 +1,13 @@
 # MAVCesium - An experimental web based map display for [MAVProxy](https://github.com/ArduPilot/MAVProxy) based on [Cesium](https://github.com/AnalyticalGraphicsInc/cesium)
-**[ Click here to see a live demo ](http://MAVCesium.io/)**
+
+> # UPDATE
+> This project is currently being re-written from the ground up with a reactive javascript framework (vue js) and graphql for communication. It is being integrated into a new web based GCS, designed to configure and control many decentralised vehicles simultaneously. If you would like to learn more about where we are taking this project go to https://github.com/goodrobots/maverick-web or say hello in our developer gitter channel https://gitter.im/goodrobots/dev. 
 
 *Notes: Your browser will need to support webgl and web sockets. Please view on a desktop machine as the application does not currently support responsive layouts.*
 
 
 ### About the project
 As a ground control station operator I often find myself wishing [MAVProxy](https://github.com/ArduPilot/MAVProxy) had a more intuitive way of displaying an air vehicle attitude and position. This project uses [Cesium](https://github.com/AnalyticalGraphicsInc/cesium) to display the position and attitude information being received by a [MAVProxy](https://github.com/ArduPilot/MAVProxy) ground station in real time.
-
-The project is designed to run on a local machine to maximise performance, however the [demo](http://www.MAVCesium.io/) is displaying the output of a [MAVProxy](https://github.com/Dronecode/MAVProxy) ground station connected to a simulated vehicle flying around [CMAC](https://www.google.com.au/maps/place/Canberra+Model+Aircraft+Club+Flying+Field/@-35.362771,149.1636837,945m/data=!3m1!1e3!4m5!3m4!1s0x6b164b893600af05:0xa5e0eae0c1fb648e!8m2!3d-35.3627754!4d149.1658777).
 
 **Note:** MAVCesium can now run stand alone from [MAVProxy](https://github.com/ArduPilot/MAVProxy). See [this issue](https://github.com/SamuelDudley/MAVCesium/issues/26) if you would like to know more.
 
