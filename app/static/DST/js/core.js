@@ -11,19 +11,12 @@ $(function () { // init tool tips and only show on hover
     var vehicle_offset_z = 25
     var vehicle_model = '/'+app_prefix+'static/DST/models/rat.gltf'
     
-    var position = Cesium.Cartesian3.fromDegrees(0, 0, 0);
-    var heading = 0;
-    var pitch = 0;
-    var roll = 0;
-    var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
-    var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
-    	
+    var position = Cesium.Cartesian3.fromDegrees(0, 0, 0); 	
     	
     vehicle_offset = new Cesium.Cartesian3(vehicle_offset_x,vehicle_offset_y,vehicle_offset_z)
     viewer.entities.add({
     	id : "vehicle",
         position : position,
-        orientation : orientation,
         
         model : {
         	allowPicking : false,
@@ -598,7 +591,7 @@ $(function () { // init tool tips and only show on hover
     }
     
     
- // setup an event handler for the mouse movement
+    // setup an event handler for the mouse movement
     var pos_handler = new Cesium.ScreenSpaceEventHandler(canvas);
  
     var selected = {

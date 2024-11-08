@@ -19,11 +19,15 @@ except ImportError:
 lock = threading.Lock()
 live_web_sockets = set()
 
+signal_received = False
+
+# Importing from system packages first can override the use of locally edited code.
 try: # try to use pkg_resources to allow for zipped python eggs
     import pkg_resources
     APP_ROOT = pkg_resources.resource_filename('MAVProxy.modules.mavproxy_cesium','app')
     APP_STATIC = pkg_resources.resource_filename('MAVProxy.modules.mavproxy_cesium.app','static')
     APP_TEMPLATES = pkg_resources.resource_filename('MAVProxy.modules.mavproxy_cesium.app','templates')
+    raise Exception("Don't use this")
 except: # otherwise fall back to the standard file system
     APP_ROOT = os.path.dirname(os.path.abspath(__file__))
     APP_STATIC = os.path.join(APP_ROOT, 'static')
@@ -103,7 +107,7 @@ def start_app(config, module_callback):
     server = tornado.httpserver.HTTPServer(application)
     server.listen(port = int(config.SERVER_PORT), address = str(config.SERVER_INTERFACE))
     if config.APP_DEBUG:
-        print("Starting Tornado server: {0}".format(config.SERVER_INTERFACE+":"+config.SERVER_PORT+"/"+config.APP_PREFIX))
+        print("Starting Tornado server: http://{0}".format(config.SERVER_INTERFACE+":"+config.SERVER_PORT+"/"+config.APP_PREFIX))
     return server
 
 def close_all_websockets():
@@ -114,13 +118,34 @@ def close_all_websockets():
     for ws in removable:
         live_web_sockets.remove(ws)
     lock.release()
-            
+
 def stop_tornado(config):
-    close_all_websockets()
-    ioloop = tornado.ioloop.IOLoop.current()
-    ioloop.add_callback(ioloop.stop)
+
     if config.APP_DEBUG:
         print("Asked Tornado to exit")
+
+    # Tornado doesn't stop well with the current architecture.
+    # Try this approach so we don't have to result to sigterm in CLI.
+    # https://github.com/tornadoweb/tornado/issues/1791#issuecomment-238214198
+    
+    ioloop = tornado.ioloop.IOLoop.instance()
+    def register_signal(sig, frame):
+        global signal_received
+        print("%s received, stopping server" % sig)
+        close_all_websockets()
+        ioloop.add_callback(ioloop.stop)
+        signal_received = True
+
+    def stop_on_signal():
+        global signal_received
+        if signal_received and not ioloop._callbacks:
+            ioloop.stop()
+            print("IOLoop stopped")
+
+    tornado.ioloop.PeriodicCallback(stop_on_signal, 1000).start()
+    signal.signal(signal.SIGTERM, register_signal)
+    logging.info("Starting server")
+    ioloop.start()
 
 def websocket_send_message(message):
     removable = set()

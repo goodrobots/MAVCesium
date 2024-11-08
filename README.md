@@ -39,31 +39,46 @@ When you load the MAVCesium module a single [tornado server](http://www.tornadow
 
 The display is updated only as new data is received via the telemetry stream, so the faster the telemetry stream the 'smoother' the display update will be.
 
-### Getting it running
+### Getting it running (through MAVProxy's module loader)
+
 *The following assumes that you have already installed the requirements for MAVProxy*
 
 * Install the python dependencies for MAVCesium located in [requirements.txt](https://github.com/SamuelDudley/MAVCesium/blob/master/requirements.txt) via pip
 
 * MAVCesium is avalable as a git submodule of [MAVProxy](https://github.com/ArduPilot/MAVProxy). If you already have an existing [MAVProxy](https://github.com/ArduPilot/MAVProxy) repository setup, you can initialise the MAVCesium module by running the following in your MAVProxy base directory:
  ```
- git submodule init
- git submodule update
+ git submodule update --init --recursive
  ```
 
  **Otherwise** if you would like to clone MAVProxy and get the MAVCesium module at the same time you can run the following command:
  ```
- git clone --recursive https://github.com/ArduPilot/MAVProxy.git
+ git clone --recurse-submodules https://github.com/ArduPilot/MAVProxy.git
  ```
  You can then install MAVProxy as per the [developer guide](http://ardupilot.github.io/MAVProxy/html/development/index.html):
- ```
- cd MAVProxy
- python setup.py build install --user
- ```
+
 * Run [MAVProxy](https://github.com/ArduPilot/MAVProxy) and load the MAVCesium module with the `module load cesium` command in the MAVProxy console
 * Point your webgl enabled browser to http://127.0.0.1:5000/mavcesium/ and once you start receiving valid mavlink messages from the vehicle connected to the MAVProxy ground station you will see the vehicle model in the center of your screen with a HUD overlay
 
 * If you have other computers / tablets / ipads on your network you can also open webgl capable browsers on them and point it to the network facing IP address of the computer that MAVProxy is running on.
 * For bonus points replace the [Griffon Aerospace MQM-170 Outlaw gltf model](https://github.com/SamuelDudley/MAVCesium/blob/master/mavproxy_cesium/app/static/DST/models/rat.gltf) with something that resembles your air vehicle! You can convert .dae models to .gltf using [this](https://cesiumjs.org/convertmodel.html) online tool
+### Getting it running (standalone)
+
+You can also run it standalone.
+
+In ArduPilot, run SITL.
+```bash
+./Tools/autotest/sim_vehicle.py -v Plane 
+```
+
+Then, start the cesium_web_server.
+
+```bash
+cd app
+python3 cesium_web_server.py
+```
+
+Each time you change code, you must kill the Tornado server, restart it, and refresh the web page.
+
 
 ### Module usage
 The top bar of the MAVCesium display contains similar data to the MAVProxy map. Here you will find the cursor lat, lon, alt and information on left click positions.

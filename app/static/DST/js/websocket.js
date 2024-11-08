@@ -61,6 +61,7 @@ function open_websocket() {
 			} else if (response.mav_data) {
 				update_data_stream(response.mav_data)
 			} else if (response.flightmode) {
+				// This doesn't ever seem to show up, even when you change mode in MAVProxy.
 				update_flightmode(response.flightmode)
 			} else {
 				// Do nothing...
